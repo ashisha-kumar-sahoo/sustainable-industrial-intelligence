@@ -1,12 +1,12 @@
 import pandas as pd
 
 
-def forecast_energy(
+def forecast_water(
     data: pd.DataFrame,
     periods: int = 7
 ) -> pd.DataFrame:
     """
-    Forecast future energy consumption using
+    Forecast future water consumption using
     the average historical consumption.
     """
 
@@ -15,22 +15,22 @@ def forecast_energy(
     if "reading_ts" not in df.columns:
         raise ValueError("Missing column: reading_ts")
 
-    if "energy_consumption_kwh" not in df.columns:
+    if "water_consumption_liters" not in df.columns:
         raise ValueError(
-            "Missing column: energy_consumption_kwh"
+            "Missing column: water_consumption_liters"
         )
 
     if df.empty:
         return pd.DataFrame(
             columns=[
                 "reading_ts",
-                "forecast_energy_kwh"
+                "forecast_water_liters"
             ]
         )
 
     df["reading_ts"] = pd.to_datetime(df["reading_ts"])
 
-    average_energy = df["energy_consumption_kwh"].mean()
+    average_water = df["water_consumption_liters"].mean()
 
     last_timestamp = df["reading_ts"].max()
 
@@ -42,7 +42,7 @@ def forecast_energy(
 
     forecast = pd.DataFrame({
         "reading_ts": future_dates,
-        "forecast_energy_kwh": average_energy
+        "forecast_water_liters": average_water
     })
 
     return forecast

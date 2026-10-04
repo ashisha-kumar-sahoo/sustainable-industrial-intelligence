@@ -2,57 +2,42 @@ import pandas as pd
 
 
 def detect_anomalies(
-    data,
-    window=3,
-    threshold=20
-):
-    data = data.copy()
+    data: pd.DataFrame,
+    threshold: float = 0.20
+) -> pd.DataFrame:
+    """
+    Detect abnormal water consumption using
+    percentage deviation from average consumption.
+    """
 
-    # Previous values se expected baseline calculate karo
-    data["expected_value"] = (
-        data["water_liters"]
-        .shift(1)
-        .rolling(
-            window=window,
-            min_periods=1
+    df = data.copy()
+
+    if "water_consumption_liters" not in df.columns:
+        raise ValueError(
+            "Missing column: water_consumption_liters"
         )
-        .mean()
-    )
 
-    # First row ke liye current value use karo
-    data["expected_value"] = (
-        data["expected_value"]
-        .fillna(data["water_liters"])
-    )
+    if df.empty:
+        df["expected_water_liters"] = pd.Series(dtype=float)
+        df["anomaly_score"] = pd.Series(dtype=float)
+        df["is_anomaly"] = pd.Series(dtype=bool)
+        return df
 
-    # Percentage deviation calculate karo
-    data["deviation_pct"] = (
-        (
-            data["water_liters"]
-            - data["expected_value"]
+    # Expected water consumption
+    expected = df["water_consumption_liters"].mean()
+
+    df["expected_water_liters"] = expected
+
+    # Percentage deviation
+    if expected == 0:
+        df["anomaly_score"] = 0.0
+    else:
+        df["anomaly_score"] = (
+            (df["water_consumption_liters"] - expected).abs()
+            / expected
         )
-        / data["expected_value"]
-    ) * 100
 
-    # Default values
-    data["anomaly"] = False
-    data["severity"] = "NORMAL"
+    # Anomaly flag
+    df["is_anomaly"] = df["anomaly_score"] > threshold
 
-    # Medium anomaly: >10%
-    data.loc[
-        data["deviation_pct"].abs() > 10,
-        "severity"
-    ] = "MEDIUM"
-
-    # High anomaly: >20%
-    data.loc[
-        data["deviation_pct"].abs() > 20,
-        "severity"
-    ] = "HIGH"
-
-    # >10% deviation ko abnormal/anomaly maana jayega
-    data["anomaly"] = (
-        data["deviation_pct"].abs() > 10
-    )
-
-    return data
+    return df

@@ -1,61 +1,41 @@
 import pandas as pd
 
+from data.loaders import load_energy_data
 
-def load_from_dataframe(data):
+
+REQUIRED_COLUMNS = [
+    "facility_id",
+    "sensor_id",
+    "reading_ts",
+    "energy_consumption_kwh",
+]
+
+
+def load_data() -> pd.DataFrame:
     """
-    Load and validate energy data from a pandas DataFrame.
+    Load energy data using the common project loader.
     """
+    data = load_energy_data()
 
-    data = data.copy()
+    if not isinstance(data, pd.DataFrame):
+        raise TypeError("Energy loader must return a pandas DataFrame.")
 
-    required_columns = [
-        "facility_id",
-        "zone_id",
-        "timestamp",
-        "energy_kwh"
+    return data.copy()
+
+
+def validate_columns(data: pd.DataFrame) -> bool:
+    """
+    Check that required energy columns exist.
+    """
+    missing_columns = [
+        column
+        for column in REQUIRED_COLUMNS
+        if column not in data.columns
     ]
 
-    # Check required columns
-    for column in required_columns:
-        if column not in data.columns:
-            raise ValueError(
-                f"Missing required column: {column}"
-            )
+    if missing_columns:
+        raise ValueError(
+            f"Missing energy columns: {missing_columns}"
+        )
 
-    # Convert timestamp
-    data["timestamp"] = pd.to_datetime(
-        data["timestamp"],
-        errors="coerce"
-    )
-
-    # Convert energy value
-    data["energy_kwh"] = pd.to_numeric(
-        data["energy_kwh"],
-        errors="coerce"
-    )
-
-    # Remove invalid rows
-    data = data.dropna(
-        subset=[
-            "facility_id",
-            "zone_id",
-            "timestamp",
-            "energy_kwh"
-        ]
-    )
-
-    # Energy cannot be negative
-    data = data[
-        data["energy_kwh"] >= 0
-    ]
-
-    # Sort by facility, zone and time
-    data = data.sort_values(
-        by=[
-            "facility_id",
-            "zone_id",
-            "timestamp"
-        ]
-    ).reset_index(drop=True)
-
-    return data
+    return True
