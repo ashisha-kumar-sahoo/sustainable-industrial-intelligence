@@ -1,0 +1,6 @@
+[theme]
+base="dark"
+
+[client]
+# pages/ holds plain page modules routed by app.py (not Streamlit multipage scripts) -> hide the auto-generated page list.
+showSidebarNavigation = false
