@@ -1,0 +1,71 @@
+flowchart LR
+
+    A["Data Sources"]
+
+    A1["IoT / Sensors"]
+    A2["Sensor Simulator"]
+    A3["Historical Data"]
+    A4["Open / Synthetic Data"]
+    A5["CSV / Excel"]
+
+    A --> B["Data Ingestion"]
+
+    A1 --> B
+    A2 --> B
+    A3 --> B
+    A4 --> B
+    A5 --> B
+
+    B --> C["Raw Data"]
+
+    C --> D["Validation"]
+
+    D --> E{"Valid Data?"}
+
+    E -->|No| F["Rejected Readings"]
+    E -->|Yes| G["Data Cleaning"]
+
+    G --> H["Cleaned Data"]
+
+    H --> I["PostgreSQL<br/>Source of Truth"]
+
+    I --> I1["Energy"]
+    I --> I2["Water"]
+    I --> I3["Waste"]
+    I --> I4["Air Quality"]
+    I --> I5["Environment"]
+    I --> I6["Traffic"]
+    I --> I7["Alerts"]
+    I --> I8["Facility Summaries"]
+
+    I --> J["AI / Analytics"]
+
+    J --> J1["Trend Analysis"]
+    J --> J2["Anomaly Detection"]
+    J --> J3["Forecasting"]
+    J --> J4["Prediction"]
+    J --> J5["Hotspot Detection"]
+    J --> J6["Priority Analysis"]
+
+    J --> K["AI Insights"]
+
+    K --> L["Decision Intelligence"]
+
+    L --> L1["Recommendations"]
+    L --> L2["Scenario Simulation"]
+    L --> L3["AI Assistant"]
+
+    L --> M["Application / Integration Layer"]
+
+    M --> N["Streamlit Dashboard"]
+
+    N --> N1["KPIs"]
+    N --> N2["Charts & Trends"]
+    N --> N3["Alerts"]
+    N --> N4["Predictions"]
+    N --> N5["Recommendations"]
+    N --> N6["Scenario Results"]
+    N --> N7["Raw Data"]
+    N --> N8["AI Assistant"]
+
+    N --> O["Decision Maker"]

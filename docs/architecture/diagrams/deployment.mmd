@@ -1,0 +1,67 @@
+flowchart TB
+
+    U["Decision Maker / User"]
+
+    U --> UI["Streamlit Dashboard"]
+
+    UI --> APP["Application / Integration Layer"]
+
+    APP --> AI["AI & Decision Intelligence"]
+
+    AI --> RAI["Resource AI<br/>Energy • Water • Waste"]
+    AI --> OAI["Operations AI<br/>Environment • Traffic • Equipment • Safety"]
+    AI --> DI["Decision Intelligence<br/>Recommendations • Simulation • AI Assistant"]
+
+    RAI --> DB["PostgreSQL<br/>Source of Truth"]
+    OAI --> DB
+    DI --> DB
+
+    ING["Data Ingestion Layer"]
+
+    ING --> DB
+
+    SIM["Sensor Simulator"]
+    SENSOR["Future IoT / Real Sensors"]
+    HIST["Historical / Synthetic / Open Data"]
+
+    SIM --> ING
+    SENSOR --> ING
+    HIST --> ING
+
+    DB --> RAW["Raw / ETL Data"]
+    DB --> DOMAIN["Domain Data"]
+    DB --> VIEWS["Database Views"]
+    DB --> ALERTS["Alerts & Summaries"]
+
+    RAW --> AI
+    DOMAIN --> AI
+    VIEWS --> APP
+    ALERTS --> UI
+
+    subgraph CLIENT["User Environment"]
+        U
+        UI
+    end
+
+    subgraph APPLICATION["Application Environment"]
+        APP
+        AI
+        RAI
+        OAI
+        DI
+    end
+
+    subgraph DATA["Data Environment"]
+        ING
+        DB
+        RAW
+        DOMAIN
+        VIEWS
+        ALERTS
+    end
+
+    subgraph SOURCES["Data Sources"]
+        SIM
+        SENSOR
+        HIST
+    end

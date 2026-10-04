@@ -1,0 +1,67 @@
+flowchart TB
+
+    A["Industrial Estate Facilities"]
+
+    A --> B["Data Sources"]
+
+    B --> B1["IoT / Real Sensors"]
+    B --> B2["Sensor Simulator"]
+    B --> B3["Historical Data"]
+    B --> B4["Open / Synthetic Data"]
+    B --> B5["CSV / Excel"]
+
+    B --> C["Data Ingestion Layer"]
+
+    C --> C1["Data Validation"]
+    C1 --> C2["Data Cleaning"]
+    C2 --> C3["Data Transformation"]
+    C3 --> C4["PostgreSQL Loader"]
+
+    C4 --> D["PostgreSQL Database<br/>Source of Truth"]
+
+    D --> D1["Raw Data"]
+    D --> D2["Cleaned Data"]
+    D --> D3["Domain Tables"]
+    D --> D4["Database Views"]
+    D --> D5["Alerts & Summaries"]
+
+    D --> E["AI / Analytics Layer"]
+
+    E --> E1["Resource AI"]
+    E1 --> E11["Energy"]
+    E1 --> E12["Water"]
+    E1 --> E13["Waste"]
+
+    E --> E2["Operations AI"]
+    E2 --> E21["Environment"]
+    E2 --> E22["Traffic"]
+    E2 --> E23["Equipment"]
+    E2 --> E24["Safety"]
+
+    E --> E3["Common Intelligence"]
+    E3 --> E31["Anomaly Detection"]
+    E3 --> E32["Forecasting"]
+    E3 --> E33["Prediction"]
+    E3 --> E34["Hotspot Detection"]
+    E3 --> E35["Priority Analysis"]
+
+    E --> F["Decision Intelligence"]
+
+    F --> F1["Recommendations"]
+    F --> F2["Scenario Simulation"]
+    F --> F3["AI Assistant"]
+
+    F --> G["Backend / Integration Layer"]
+
+    G --> H["Streamlit Dashboard"]
+
+    H --> H1["KPIs"]
+    H --> H2["Trends"]
+    H --> H3["Alerts"]
+    H --> H4["Predictions"]
+    H --> H5["Recommendations"]
+    H --> H6["Scenario Results"]
+    H --> H7["Raw Data Explorer"]
+    H --> H8["AI Assistant"]
+
+    H --> I["Decision Maker"]
