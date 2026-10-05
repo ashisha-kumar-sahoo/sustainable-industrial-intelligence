@@ -1,0 +1,20 @@
+"""Configuration for Environment Operations AI."""
+
+AQI_COLUMN = "aqi"
+PM25_COLUMN = "pm25"
+PM10_COLUMN = "pm10"
+CO_COLUMN = "co"
+CO2_COLUMN = "co2"
+NO2_COLUMN = "no2"
+SO2_COLUMN = "so2"
+
+TIMESTAMP_COLUMN = "reading_ts"
+FACILITY_COLUMN = "facility_id"
+SENSOR_COLUMN = "sensor_id"
+
+ANOMALY_CONTAMINATION = 0.10
+
+HIGH_AQI_THRESHOLD = 100
+HOTSPOT_AQI_THRESHOLD = 100
+
+FORECAST_HORIZON = 3
