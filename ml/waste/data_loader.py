@@ -1,63 +1,44 @@
 import pandas as pd
 
+from data.loaders import load_waste_data
 
-def load_from_dataframe(data):
+
+REQUIRED_COLUMNS = [
+    "facility_id",
+    "sensor_id",
+    "reading_ts",
+    "waste_type",
+    "waste_quantity_kg",
+    "recyclable_quantity_kg",
+    "hazardous_quantity_kg",
+]
+
+
+def load_data() -> pd.DataFrame:
     """
-    Load and validate waste data from a pandas DataFrame.
+    Load waste data using the common project loader.
     """
+    data = load_waste_data()
 
-    data = data.copy()
+    if not isinstance(data, pd.DataFrame):
+        raise TypeError("Waste loader must return a pandas DataFrame.")
 
-    required_columns = [
-        "facility_id",
-        "zone_id",
-        "timestamp",
-        "fill_level",
-        "waste_type"
+    return data.copy()
+
+
+def validate_columns(data: pd.DataFrame) -> bool:
+    """
+    Check that required waste columns exist.
+    """
+    missing_columns = [
+        column
+        for column in REQUIRED_COLUMNS
+        if column not in data.columns
     ]
 
-    # Check required columns
-    for column in required_columns:
-        if column not in data.columns:
-            raise ValueError(
-                f"Missing required column: {column}"
-            )
+    if missing_columns:
+        raise ValueError(
+            f"Missing waste columns: {missing_columns}"
+        )
 
-    # Convert timestamp
-    data["timestamp"] = pd.to_datetime(
-        data["timestamp"],
-        errors="coerce"
-    )
-
-    # Convert fill level to numeric
-    data["fill_level"] = pd.to_numeric(
-        data["fill_level"],
-        errors="coerce"
-    )
-
-    # Remove invalid rows
-    data = data.dropna(
-        subset=[
-            "facility_id",
-            "zone_id",
-            "timestamp",
-            "fill_level",
-            "waste_type"
-        ]
-    )
-
-    # Fill level must be between 0 and 100
-    data = data[
-        (data["fill_level"] >= 0) &
-        (data["fill_level"] <= 100)
-    ]
-
-    # Sort by facility, zone and timestamp
-    data = data.sort_values(
-        by=[
-            "facility_id",
-            "zone_id",
-            "timestamp"
-        ]
-    ).reset_index(drop=True)
-    return data
+    return True

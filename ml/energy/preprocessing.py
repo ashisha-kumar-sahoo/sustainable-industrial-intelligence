@@ -1,54 +1,58 @@
 import pandas as pd
 
 
-def preprocess_energy_data(data):
+REQUIRED_COLUMNS = [
+    "facility_id",
+    "sensor_id",
+    "reading_ts",
+    "energy_consumption_kwh",
+]
+
+
+def preprocess_data(data: pd.DataFrame) -> pd.DataFrame:
     """
-    Prepare energy data for anomaly detection
-    and forecasting.
+    Clean and prepare energy data for AI processing.
     """
 
-    data = data.copy()
+    df = data.copy()
 
-    # Sort by facility, zone and time
-    data = data.sort_values(
-        by=[
-            "facility_id",
-            "zone_id",
-            "timestamp"
-        ]
-    ).reset_index(drop=True)
+    # Check required columns
+    missing_columns = [
+        column for column in REQUIRED_COLUMNS
+        if column not in df.columns
+    ]
 
-    # Make sure energy values are numeric
-    data["energy_kwh"] = pd.to_numeric(
-        data["energy_kwh"],
+    if missing_columns:
+        raise ValueError(
+            f"Missing energy columns: {missing_columns}"
+        )
+
+    # Convert timestamp
+    df["reading_ts"] = pd.to_datetime(
+        df["reading_ts"],
         errors="coerce"
     )
 
-    # Remove invalid energy values
-    data = data.dropna(
-        subset=["energy_kwh"]
+    # Convert energy consumption to numeric
+    df["energy_consumption_kwh"] = pd.to_numeric(
+        df["energy_consumption_kwh"],
+        errors="coerce"
     )
 
-    # Calculate previous energy consumption
-    data["previous_energy"] = (
-        data.groupby(
-            ["facility_id", "zone_id"]
-        )["energy_kwh"]
-        .shift(1)
+    # Remove invalid rows
+    df = df.dropna(
+        subset=[
+            "facility_id",
+            "sensor_id",
+            "reading_ts",
+            "energy_consumption_kwh",
+        ]
     )
 
-    # Calculate percentage change
-    data["change_pct"] = (
-        (
-            data["energy_kwh"]
-            - data["previous_energy"]
-        )
-        / data["previous_energy"]
-    ) * 100
+    # Remove negative energy values
+    df = df[df["energy_consumption_kwh"] >= 0]
 
-    # First record has no previous value
-    data["change_pct"] = (
-        data["change_pct"].fillna(0)
-    )
+    # Sort by time
+    df = df.sort_values("reading_ts").reset_index(drop=True)
 
-    return data
+    return df

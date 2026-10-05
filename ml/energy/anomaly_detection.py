@@ -2,46 +2,42 @@ import pandas as pd
 
 
 def detect_anomalies(
-    data,
-    threshold=20
-):
+    data: pd.DataFrame,
+    threshold: float = 0.20
+) -> pd.DataFrame:
     """
-    Detect abnormal energy consumption
-    using percentage deviation from the
-    previous energy consumption.
+    Detect abnormal energy consumption using percentage deviation
+    from the average consumption.
     """
 
-    data = data.copy()
+    df = data.copy()
 
-    # Default values
-    data["anomaly"] = False
-    data["severity"] = "NORMAL"
+    if "energy_consumption_kwh" not in df.columns:
+        raise ValueError(
+            "Missing column: energy_consumption_kwh"
+        )
 
-    # Medium anomaly
-    data.loc[
-        data["change_pct"].abs() > 10,
-        "severity"
-    ] = "MEDIUM"
+    if df.empty:
+        df["expected_energy_kwh"] = pd.Series(dtype=float)
+        df["anomaly_score"] = pd.Series(dtype=float)
+        df["is_anomaly"] = pd.Series(dtype=bool)
+        return df
 
-    # High anomaly
-    data.loc[
-        data["change_pct"].abs() > threshold,
-        "severity"
-    ] = "HIGH"
+    # Expected consumption
+    expected = df["energy_consumption_kwh"].mean()
 
-    # Anomaly if change is greater than 10%
-    data["anomaly"] = (
-        data["change_pct"].abs() > 10
-    )
+    df["expected_energy_kwh"] = expected
 
-    # Expected energy value
-    data["expected_value"] = (
-        data["previous_energy"]
-    )
+    # Percentage deviation
+    if expected == 0:
+        df["anomaly_score"] = 0.0
+    else:
+        df["anomaly_score"] = (
+            (df["energy_consumption_kwh"] - expected).abs()
+            / expected
+        )
 
-    # Deviation percentage
-    data["deviation_pct"] = (
-        data["change_pct"]
-    )
+    # Anomaly flag
+    df["is_anomaly"] = df["anomaly_score"] > threshold
 
-    return data
+    return df

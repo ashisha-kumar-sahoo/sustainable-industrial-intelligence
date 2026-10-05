@@ -3,67 +3,67 @@ import pandas as pd
 
 REQUIRED_COLUMNS = [
     "facility_id",
-    "zone_id",
-    "timestamp",
-    "water_liters",
-    "flow_rate"
+    "sensor_id",
+    "reading_ts",
+    "water_consumption_liters",
+    "flow_rate",
 ]
 
 
-def validate_columns(data):
+def preprocess_data(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Clean and prepare water data for AI processing.
+    """
 
+    df = data.copy()
+
+    # Check required columns
     missing_columns = [
         column
         for column in REQUIRED_COLUMNS
-        if column not in data.columns
+        if column not in df.columns
     ]
 
     if missing_columns:
         raise ValueError(
-            f"Missing columns: {missing_columns}"
+            f"Missing water columns: {missing_columns}"
         )
 
-    return True
-
-
-def preprocess_water_data(data):
-
-    data = data.copy()
-
-    # Check required columns
-    validate_columns(data)
-
     # Convert timestamp
-    data["timestamp"] = pd.to_datetime(
-        data["timestamp"],
+    df["reading_ts"] = pd.to_datetime(
+        df["reading_ts"],
         errors="coerce"
     )
 
-    # Convert water consumption to numeric
-    data["water_liters"] = pd.to_numeric(
-        data["water_liters"],
+    # Convert numeric columns
+    df["water_consumption_liters"] = pd.to_numeric(
+        df["water_consumption_liters"],
         errors="coerce"
     )
 
-    # Convert flow rate to numeric
-    data["flow_rate"] = pd.to_numeric(
-        data["flow_rate"],
+    df["flow_rate"] = pd.to_numeric(
+        df["flow_rate"],
         errors="coerce"
     )
 
     # Remove invalid rows
-    data = data.dropna(
+    df = df.dropna(
         subset=[
-            "timestamp",
-            "water_liters",
-            "flow_rate"
+            "facility_id",
+            "sensor_id",
+            "reading_ts",
+            "water_consumption_liters",
+            "flow_rate",
         ]
     )
 
-    # Sort by time
-    data = data.sort_values(
-        by="timestamp"
-    )
+    # Remove negative values
+    df = df[
+        (df["water_consumption_liters"] >= 0)
+        & (df["flow_rate"] >= 0)
+    ]
 
-    # Reset index
-    return data.reset_index(drop=True)
+    # Sort by timestamp
+    df = df.sort_values("reading_ts").reset_index(drop=True)
+
+    return df

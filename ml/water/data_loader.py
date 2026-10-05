@@ -1,62 +1,42 @@
 import pandas as pd
-import psycopg2
+
+from data.loaders import load_water_data
 
 
-# ============================================================
-# LOAD DATA FROM PANDAS DATAFRAME
-# ============================================================
+REQUIRED_COLUMNS = [
+    "facility_id",
+    "sensor_id",
+    "reading_ts",
+    "water_consumption_liters",
+    "flow_rate",
+]
 
-def load_from_dataframe(data):
+
+def load_data() -> pd.DataFrame:
+    """
+    Load water data using the common project loader.
+    """
+    data = load_water_data()
 
     if not isinstance(data, pd.DataFrame):
-        raise TypeError(
-            "Input must be a pandas DataFrame."
-        )
+        raise TypeError("Water loader must return a pandas DataFrame.")
 
     return data.copy()
 
 
-# ============================================================
-# LOAD DATA FROM CSV
-# ============================================================
+def validate_columns(data: pd.DataFrame) -> bool:
+    """
+    Check that required water columns exist.
+    """
+    missing_columns = [
+        column
+        for column in REQUIRED_COLUMNS
+        if column not in data.columns
+    ]
 
-def load_from_csv(file_path):
-
-    data = pd.read_csv(file_path)
-
-    return data
-
-
-# ============================================================
-# LOAD DATA FROM POSTGRESQL
-# ============================================================
-
-def load_from_postgresql(
-    host,
-    port,
-    database,
-    user,
-    password,
-    query
-):
-
-    connection = psycopg2.connect(
-        host=host,
-        port=port,
-        database=database,
-        user=user,
-        password=password
-    )
-
-    try:
-
-        data = pd.read_sql(
-            query,
-            connection
+    if missing_columns:
+        raise ValueError(
+            f"Missing water columns: {missing_columns}"
         )
 
-    finally:
-
-        connection.close()
-
-    return data
+    return True

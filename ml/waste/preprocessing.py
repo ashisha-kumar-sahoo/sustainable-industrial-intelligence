@@ -1,69 +1,66 @@
 import pandas as pd
 
 
-def preprocess_waste_data(data):
+REQUIRED_COLUMNS = [
+    "facility_id",
+    "sensor_id",
+    "reading_ts",
+    "waste_type",
+    "waste_quantity_kg",
+    "recyclable_quantity_kg",
+    "hazardous_quantity_kg",
+]
+
+
+def preprocess_data(data: pd.DataFrame) -> pd.DataFrame:
     """
-    Prepare waste data for overflow prediction
-    and collection priority.
+    Clean and prepare waste data for AI processing.
     """
 
-    data = data.copy()
+    df = data.copy()
 
-    # Sort by facility, zone and time
-    data = data.sort_values(
-        by=[
-            "facility_id",
-            "zone_id",
-            "timestamp"
-        ]
-    ).reset_index(drop=True)
+    # Check required columns
+    missing_columns = [
+        column
+        for column in REQUIRED_COLUMNS
+        if column not in df.columns
+    ]
 
-    # Make sure fill level is numeric
-    data["fill_level"] = pd.to_numeric(
-        data["fill_level"],
+    if missing_columns:
+        raise ValueError(
+            f"Missing waste columns: {missing_columns}"
+        )
+
+    # Convert timestamp
+    df["reading_ts"] = pd.to_datetime(
+        df["reading_ts"],
         errors="coerce"
     )
 
-    # Remove invalid fill levels
-    data = data.dropna(
-        subset=["fill_level"]
-    )
+    # Convert quantity columns to numeric
+    numeric_columns = [
+        "waste_quantity_kg",
+        "recyclable_quantity_kg",
+        "hazardous_quantity_kg",
+    ]
 
-    # Calculate previous fill level
-    data["previous_fill_level"] = (
-        data.groupby(
-            ["facility_id", "zone_id"]
-        )["fill_level"]
-        .shift(1)
-    )
-
-    # Calculate time difference in hours
-    data["time_diff_hours"] = (
-        data.groupby(
-            ["facility_id", "zone_id"]
-        )["timestamp"]
-        .diff()
-        .dt.total_seconds()
-        / 3600
-    )
-
-    # Calculate fill rate (% per hour)
-    data["fill_rate"] = (
-        (
-            data["fill_level"]
-            - data["previous_fill_level"]
+    for column in numeric_columns:
+        df[column] = pd.to_numeric(
+            df[column],
+            errors="coerce"
         )
-        / data["time_diff_hours"]
-    )
 
-    # First record or invalid time difference
-    data["fill_rate"] = (
-        data["fill_rate"]
-        .replace(
-            [float("inf"), -float("inf")],
-            0
-        )
-        .fillna(0)
-    )
+    # Remove invalid rows
+    df = df.dropna(subset=REQUIRED_COLUMNS)
 
-    return data
+    # Remove negative quantities
+    df = df[
+        (df["waste_quantity_kg"] >= 0)
+        & (df["recyclable_quantity_kg"] >= 0)
+        & (df["hazardous_quantity_kg"] >= 0)
+    ]
+
+    # Sort by timestamp
+    df = df.sort_values("reading_ts").reset_index(drop=True)
+
+    return df
