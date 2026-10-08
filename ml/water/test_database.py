@@ -1,4 +1,4 @@
-from .data_loader import load_from_postgresql
+from .data_loader import load_data
 
 
 # ============================================================

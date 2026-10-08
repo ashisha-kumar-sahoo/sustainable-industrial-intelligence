@@ -237,3 +237,33 @@ The system is intended for decision-support and demonstration purposes and does 
 * Mobile interface
 * Integration with facility management systems
 * Automated maintenance and work-order systems
+
+
+## Quick Start
+
+1. Create and activate `.venv`.
+2. Install dependencies: `pip install -r requirements.txt`.
+3. Copy `.env.example` to `.env` and set the PostgreSQL password. Never commit `.env`.
+4. Start PostgreSQL and apply `database/migrations/001_add_waste_bin_telemetry.sql` to an existing installation.
+5. Install/start Ollama separately and pull the configured Qwen model.
+6. Run the Streamlit dashboard from the project root with `streamlit run dashboard/app.py`.
+7. Use `python -m ingestion.sensor_simulator` / the documented ingestion entry point when fresh sensor-style readings are required.
+
+## Roles
+
+The dashboard supports `ADMIN`, `OPERATIONS`, and `SUSTAINABILITY` views. Registration is local prototype authentication; production deployments should use enterprise identity and secure session management.
+
+## Hospital configuration
+
+Use the sidebar **Facility profile** selector to demonstrate the same application architecture configured for a hospital. The supplied database remains industrial-estate data; hospital mode is a configuration path, not a claim of hospital measurements.
+
+## Validation
+
+Run:
+
+```powershell
+python -m compileall -q .
+pytest -q
+```
+
+The current automated suite covers the operations/integration tests. Dashboard and database smoke tests additionally depend on a reachable PostgreSQL instance.

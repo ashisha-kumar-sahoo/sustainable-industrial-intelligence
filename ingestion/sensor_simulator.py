@@ -74,7 +74,9 @@ class SensorSimulator:
             'waste_type': random.choice(waste_types),
             'waste_quantity_kg': total,
             'recyclable_quantity_kg': round(total * random.uniform(0.1, 0.8), 2),
-            'hazardous_quantity_kg': round(total * random.uniform(0.0, 0.1), 2)
+            'hazardous_quantity_kg': round(total * random.uniform(0.0, 0.1), 2),
+            'fill_level_percent': round(random.uniform(10.0, 95.0), 2),
+            'fill_rate_percent_per_hour': round(random.uniform(0.0, 8.0), 3)
         }
 
     def generate_environment_reading(self, sensor_id: int = None, facility_id: int = None) -> Dict[str, Any]:

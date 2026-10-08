@@ -1,162 +1,77 @@
 import sys
 import pandas as pd
 
-from .data_loader import load_from_dataframe
-from .preprocessing import preprocess_energy_data
+from .data_loader import load_data, validate_columns
+from .preprocessing import preprocess_data
 from .anomaly_detection import detect_anomalies
-from .forecasting import forecast_energy
 
 
-# ============================================================
-# ENERGY INTELLIGENCE PIPELINE
-# ============================================================
-
-def run_energy_intelligence(data):
-
-    data = load_from_dataframe(data)
-    data = preprocess_energy_data(data)
+def run_energy_intelligence(data=None):
+    """Run the energy anomaly pipeline on a DataFrame or PostgreSQL loader data."""
+    if data is None:
+        data = load_data()
+    validate_columns(data)
+    data = preprocess_data(data)
     data = detect_anomalies(data)
-    data = forecast_energy(data)
-
     return data
 
 
-# ============================================================
-# STRUCTURED OUTPUT
-# ============================================================
-
 def create_energy_output(data):
-
+    """Create a stable assistant/dashboard-friendly anomaly contract."""
     results = []
+    if data is None or data.empty:
+        return results
 
     for _, row in data.iterrows():
-
+        actual = float(row["energy_consumption_kwh"])
+        expected = float(row["expected_energy_kwh"])
+        deviation = ((actual - expected) / expected * 100) if expected else 0.0
+        score = float(row.get("anomaly_score", 0.0))
+        severity = "HIGH" if score >= 0.30 else "MEDIUM" if score >= 0.20 else "NORMAL"
         results.append({
             "source": "energy",
             "facility_id": row["facility_id"],
-            "zone_id": row["zone_id"],
-            "timestamp": str(row["timestamp"]),
+            "sensor_id": row["sensor_id"],
+            "timestamp": str(row["reading_ts"]),
             "metric": "energy_kwh",
-            "actual_value": float(row["energy_kwh"]),
-            "expected_value": round(
-                float(row["expected_value"]), 2
-            ),
-            "deviation_pct": round(
-                float(row["deviation_pct"]), 2
-            ),
-            "forecast_energy_kwh": round(
-                float(row["forecast_energy_kwh"]), 2
-            ),
-            "severity": str(row["severity"]),
-            "anomaly": bool(row["anomaly"])
+            "actual_value": actual,
+            "expected_value": round(expected, 2),
+            "deviation_pct": round(deviation, 2),
+            "severity": severity,
+            "anomaly": bool(row.get("is_anomaly", False)),
         })
-
     return results
 
 
-# ============================================================
-# MAIN
-# ============================================================
-
 if __name__ == "__main__":
-
-    # --------------------------------------------------------
-    # TEMPORARY DATA FROM POWERSHELL
-    #
-    # Format:
-    # facility,zone,date,energy_kwh
-    # --------------------------------------------------------
-
     if len(sys.argv) < 2:
-
         print("ERROR: No data provided.")
-        print()
-        print("Example:")
-        print(
-            'python -m ml.energy.predict '
-            '"F001,Z001,2028-09-01,5000"'
-        )
-
+        print('Example: python -m ml.energy.predict "1,1,2026-09-01,5000"')
         sys.exit(1)
 
     try:
-
         rows = []
-
-        # Each command-line argument = one energy record
         for value in sys.argv[1:]:
-
             parts = value.split(",")
-
             if len(parts) != 4:
-
-                raise ValueError(
-                    "Each record must contain: "
-                    "facility,zone,date,energy_kwh"
-                )
-
+                raise ValueError("Each record must contain: facility_id,sensor_id,date,energy_kwh")
             rows.append({
-                "facility_id": parts[0],
-                "zone_id": parts[1],
-                "timestamp": parts[2],
-                "energy_kwh": float(parts[3])
+                "facility_id": int(parts[0]),
+                "sensor_id": int(parts[1]),
+                "reading_ts": parts[2],
+                "energy_consumption_kwh": float(parts[3]),
             })
 
-        # Convert input to DataFrame
-        input_data = pd.DataFrame(rows)
-
-        # Run Energy Intelligence
-        result = run_energy_intelligence(
-            input_data
-        )
-
-        # Create structured output
-        structured_output = create_energy_output(
-            result
-        )
-
-        # ----------------------------------------------------
-        # STATUS
-        # ----------------------------------------------------
-
-        high_anomaly = (
-            result["severity"] == "HIGH"
-        ).any()
-
-        any_anomaly = (
-            result["anomaly"] == True
-        ).any()
-
-        print()
+        result = run_energy_intelligence(pd.DataFrame(rows))
+        output = create_energy_output(result)
+        high = any(x["severity"] == "HIGH" for x in output)
+        anomaly = any(x["anomaly"] for x in output)
         print("=" * 55)
-        print("             ENERGY INTELLIGENCE")
+        print("ENERGY INTELLIGENCE")
         print("=" * 55)
-
-        if high_anomaly:
-
-            print()
-            print("Energy Status : ENERGY HIGH")
-            print("Risk          : HIGH")
-
-        elif any_anomaly:
-
-            print()
-            print("Energy Status : ENERGY ABNORMAL")
-            print("Risk          : MEDIUM")
-
-        else:
-
-            print()
-            print("Energy Status : ENERGY OK")
-            print("Risk          : LOW")
-
-        print()
+        print("Energy Status:", "ENERGY HIGH" if high else "ENERGY ABNORMAL" if anomaly else "ENERGY OK")
+        print("Risk:", "HIGH" if high else "MEDIUM" if anomaly else "LOW")
         print("=" * 55)
-
     except Exception as error:
-
-        print()
-        print("ERROR:")
-        print(error)
-
+        print("ERROR:", error)
         sys.exit(1)
