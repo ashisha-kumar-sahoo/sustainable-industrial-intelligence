@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Industrial Intelligence Assistant</title>
+  <style>
+    :root { color-scheme: light; --ink:#17332f; --muted:#647571; --green:#16715e; --line:#dce7e3; --bg:#f2f6f4; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 system-ui,Segoe UI,Arial,sans-serif; }
+    .layout { width:min(1100px,94vw); margin:32px auto; display:grid; grid-template-columns:250px 1fr; gap:20px; }
+    aside,.main { background:white; border:1px solid var(--line); border-radius:18px; box-shadow:0 8px 30px #17332f0b; }
+    aside { padding:22px 18px; align-self:start; }
+    .brand { display:flex; align-items:center; gap:11px; margin-bottom:28px; }
+    .mark { width:38px; height:38px; display:grid; place-items:center; border-radius:12px; color:white; background:var(--green); font-weight:800; }
+    .brand strong { display:block; font-size:14px; line-height:1.2; }
+    .brand small { color:var(--muted); }
+    aside h2 { margin:0 0 10px; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
+    .sample { width:100%; margin:5px 0; padding:9px 10px; text-align:left; border:1px solid transparent; border-radius:9px; color:#31534c; background:#f5f8f7; cursor:pointer; }
+    .sample:hover { border-color:#b9d7ce; background:#eef6f2; }
+    .hint { margin-top:22px; padding-top:15px; border-top:1px solid var(--line); color:var(--muted); font-size:12px; }
+    .main { min-height:690px; display:flex; flex-direction:column; overflow:hidden; }
+    header { padding:22px 26px; border-bottom:1px solid var(--line); }
+    header h1 { margin:0; font-size:20px; }
+    header p { margin:4px 0 0; color:var(--muted); font-size:13px; }
+    #status { min-height:21px; padding:4px 26px 0; color:var(--muted); font-size:12px; }
+    #conversation { flex:1; padding:18px 26px; overflow:auto; }
+    .welcome { max-width:620px; margin:70px auto; text-align:center; }
+    .welcome h2 { margin:0 0 8px; font-size:24px; }
+    .welcome p { margin:0; color:var(--muted); }
+    .turn { margin:18px 0 24px; }
+    .question { width:fit-content; max-width:90%; margin-left:auto; padding:11px 15px; border-radius:14px 14px 4px 14px; color:white; background:var(--green); white-space:pre-wrap; }
+    .answer { max-width:95%; margin-top:12px; padding:17px; border:1px solid var(--line); border-radius:14px 14px 14px 4px; background:#fbfdfc; }
+    .answer h3 { margin:0 0 7px; font-size:16px; }
+    .answer p { margin:7px 0; }
+    .answer ul { margin:6px 0; padding-left:20px; }
+    .label { margin-top:13px !important; color:var(--muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; }
+    .meta { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+    .pill { padding:4px 9px; border-radius:99px; color:#31534c; background:#eaf3ef; font-size:11px; }
+    .form-wrap { padding:14px 20px 18px; border-top:1px solid var(--line); background:white; }
+    form { display:flex; gap:10px; }
+    input { flex:1; min-width:0; padding:13px 14px; border:1px solid #cbd9d4; border-radius:11px; font:inherit; outline:none; }
+    input:focus { border-color:var(--green); box-shadow:0 0 0 3px #16715e18; }
+    button.send { min-width:82px; border:0; border-radius:11px; color:white; background:var(--green); font:600 14px system-ui; cursor:pointer; }
+    button.send:disabled { opacity:.55; cursor:wait; }
+    .footnote { margin:8px 2px 0; color:var(--muted); font-size:11px; }
+    @media(max-width:740px) { .layout { grid-template-columns:1fr; margin:12px auto; } aside { order:2; } .main { min-height:75vh; } .sample { width:auto; margin-right:4px; } aside h2 { margin-top:0; } .hint { display:none; } }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <div class="brand"><div class="mark">SI</div><div><strong>Sustainable Industrial</strong><small>Intelligence Assistant</small></div></div>
+      <h2>Try a question</h2>
+      <button class="sample">Which facility has the highest energy consumption?</button>
+      <button class="sample">Which facilities currently have energy anomalies?</button>
+      <button class="sample">Which facility has the highest water consumption?</button>
+      <button class="sample">How has water consumption changed over the last 7 days?</button>
+      <button class="sample">What are today's biggest problems?</button>
+      <button class="sample">What if energy consumption is reduced by 20%?</button>
+      <div class="hint">Answers come from your local PostgreSQL data and deterministic intelligence. Ollama/Qwen may add a short explanation.</div>
+    </aside>
+
+    <main class="main">
+      <header><h1>Ask your industrial data</h1><p>Get a decision, supporting evidence, and a recommended action.</p></header>
+      <div id="status" role="status"></div>
+      <section id="conversation" aria-live="polite">
+        <div class="welcome" id="welcome"><h2>What would you like to know?</h2><p>Ask about energy, water, waste, air quality, traffic, equipment, safety, history, or a scenario.</p></div>
+      </section>
+      <div class="form-wrap">
+        <form id="askForm"><input id="question" placeholder="Ask a question..." autocomplete="off" required><button class="send" id="sendButton">Ask</button></form>
+        <div class="footnote">Local demo UI · Your chat is not saved after refresh.</div>
+      </div>
+    </main>
+  </div>
+  <script>
+    const form = document.getElementById('askForm');
+    const input = document.getElementById('question');
+    const conversation = document.getElementById('conversation');
+    const statusEl = document.getElementById('status');
+    const sendButton = document.getElementById('sendButton');
+
+    document.querySelectorAll('.sample').forEach(button => {
+      button.addEventListener('click', () => { input.value = button.textContent.trim(); input.focus(); });
+    });
+
+    function addTurn(question, result) {
+      document.getElementById('welcome')?.remove();
+      const turn = document.createElement('article');
+      turn.className = 'turn';
+      const user = document.createElement('div');
+      user.className = 'question';
+      user.textContent = question;
+      turn.appendChild(user);
+
+      const card = document.createElement('div');
+      card.className = 'answer';
+      const answer = result.answer || {};
+      const title = document.createElement('h3');
+      title.textContent = 'Assistant answer';
+      card.appendChild(title);
+      const summary = document.createElement('p');
+      summary.textContent = result.natural_language_response || answer.summary || result.error || 'No answer was returned.';
+      card.appendChild(summary);
+
+      if (answer.evidence?.length) {
+        const label = document.createElement('p'); label.className = 'label'; label.textContent = 'Evidence'; card.appendChild(label);
+        const list = document.createElement('ul');
+        answer.evidence.forEach(item => { const li = document.createElement('li'); li.textContent = typeof item === 'string' ? item : JSON.stringify(item); list.appendChild(li); });
+        card.appendChild(list);
+      }
+      if (answer.explanation) {
+        const label = document.createElement('p'); label.className = 'label'; label.textContent = 'Explanation'; card.appendChild(label);
+        const explanation = document.createElement('p'); explanation.textContent = answer.explanation; card.appendChild(explanation);
+      }
+      if (answer.recommended_action) {
+        const label = document.createElement('p'); label.className = 'label'; label.textContent = 'Recommended action'; card.appendChild(label);
+        const action = document.createElement('p'); action.textContent = answer.recommended_action; card.appendChild(action);
+      }
+      if (answer.data_basis) {
+        const label = document.createElement('p'); label.className = 'label'; label.textContent = 'Data basis'; card.appendChild(label);
+        const basis = document.createElement('p'); basis.textContent = answer.data_basis; card.appendChild(basis);
+      }
+      const meta = document.createElement('div'); meta.className = 'meta';
+      if (result.route) { const pill = document.createElement('span'); pill.className = 'pill'; pill.textContent = 'Route: ' + result.route; meta.appendChild(pill); }
+      if (result.errors?.length) { const pill = document.createElement('span'); pill.className = 'pill'; pill.textContent = 'Some services unavailable; deterministic answer shown'; meta.appendChild(pill); }
+      card.appendChild(meta);
+      turn.appendChild(card);
+      conversation.appendChild(turn);
+      conversation.scrollTop = conversation.scrollHeight;
+    }
+
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      const question = input.value.trim();
+      if (!question) return;
+      input.value = '';
+      sendButton.disabled = true;
+      statusEl.textContent = 'Checking your data and preparing an answer…';
+      try {
+        const response = await fetch('/api/ask', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({question})
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'The request failed.');
+        addTurn(question, result);
+        statusEl.textContent = '';
+      } catch (error) {
+        addTurn(question, {error: error.message, answer: {summary: 'Could not reach the assistant. Check that the local dashboard server is running.'}});
+        statusEl.textContent = '';
+      } finally {
+        sendButton.disabled = false;
+        input.focus();
+      }
+    });
+  </script>
+</body>
+</html>
