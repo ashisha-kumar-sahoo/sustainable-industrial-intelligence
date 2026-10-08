@@ -1,9 +1,15 @@
 pandas
 numpy
 scikit-learn
+scipy
+joblib
 sqlalchemy
 psycopg2-binary
 streamlit
 plotly
 python-dotenv
 requests
+openpyxl
+pytest
+pytest-cov
+python-dateutil

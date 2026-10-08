@@ -28,4 +28,17 @@ def overview(dark):
     with c: insights_panel(al)
     with d: recommendations_panel(al)
     st.subheader("Sustainability scorecard (draft)"); scorecard_table(domain_scorecard(K))
-    with st.expander("Scoring methodology (draft — team to finalise)"): st.write("Domain score = 100 − 2 × (24h deviation above baseline, capped at 50%). Overall = average of domains. Based on simulated/sample data; not an official index.")
+    with st.expander("Scoring methodology"):
+        st.write("Domain score = 100 − 2 × (24h deviation above baseline, capped at 50%). Overall = average of domains. This is a prototype decision-support score, not an official regulatory index.")
+    with st.expander("AI/ML validation evidence"):
+        from services.model_metrics import collect_metrics
+        metrics = collect_metrics()
+        st.markdown("**Forecast backtest** — one-step persistence baseline on the current data.")
+        if metrics["forecast"]:
+            st.dataframe(metrics["forecast"], use_container_width=True, hide_index=True)
+        else:
+            st.info("Not enough connected data for a backtest yet.")
+        st.markdown("**Anomaly monitoring**")
+        if metrics["anomaly"]:
+            st.dataframe(metrics["anomaly"], use_container_width=True, hide_index=True)
+        st.caption(metrics["anomaly_note"])

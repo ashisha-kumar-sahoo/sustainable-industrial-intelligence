@@ -76,7 +76,9 @@ def load_waste_data() -> pd.DataFrame:
             waste_type,
             waste_quantity_kg,
             recyclable_quantity_kg,
-            hazardous_quantity_kg
+            hazardous_quantity_kg,
+            fill_level_percent,
+            fill_rate_percent_per_hour
         FROM public.waste_readings
         ORDER BY reading_ts;
     """

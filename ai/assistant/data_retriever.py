@@ -333,6 +333,8 @@ def get_latest_waste_data():
                 w.waste_quantity_kg,
                 w.recyclable_quantity_kg,
                 w.hazardous_quantity_kg,
+                w.fill_level_percent,
+                w.fill_rate_percent_per_hour,
                 w.disposal_method,
                 w.anomaly_flag,
                 w.anomaly_reason
@@ -360,9 +362,11 @@ def get_latest_waste_data():
                 "waste_quantity_kg": float(row[4]),
                 "recyclable_quantity_kg": float(row[5]),
                 "hazardous_quantity_kg": float(row[6]),
-                "disposal_method": row[7],
-                "anomaly_flag": row[8],
-                "anomaly_reason": row[9]
+                "fill_level_percent": float(row[7]) if row[7] is not None else None,
+                "fill_rate_percent_per_hour": float(row[8]) if row[8] is not None else None,
+                "disposal_method": row[9],
+                "anomaly_flag": row[10],
+                "anomaly_reason": row[11]
             })
 
         return waste_data

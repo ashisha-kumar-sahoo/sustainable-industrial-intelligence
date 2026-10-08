@@ -24,18 +24,17 @@ def theme_switch(where, dark):
     st.toggle("Theme", key=key, on_change=set_mode, args=(where,), help="ON = Dark, OFF = Light")
 
 def render_login(dark):
-    st.markdown(LOGIN_CSS, unsafe_allow_html=True); theme_switch("login", dark); st.markdown(LOGIN_HERO, unsafe_allow_html=True); _, mid, _ = st.columns([1, 1.5, 1]); tl, tr = mid.tabs(["🔐 Admin Login", "📝 Create Admin Account"])
+    st.markdown(LOGIN_CSS, unsafe_allow_html=True); theme_switch("login", dark); st.markdown(LOGIN_HERO, unsafe_allow_html=True); _, mid, _ = st.columns([1, 1.5, 1]); tl, tr = mid.tabs(["🔐 Login", "📝 Create Account"])
     with tl, st.form("login"):
-        st.subheader("Welcome Back, Admin"); i = st.text_input("Admin ID / Email"); p = st.text_input("Password", type="password")
+        st.subheader("Welcome Back"); i = st.text_input("Admin ID / Email"); p = st.text_input("Password", type="password")
         if st.form_submit_button("LOGIN", use_container_width=True):
             u = auth.login(i, p)
             if u: st.session_state.user = u; st.rerun()
-            else: st.error("Invalid Admin ID or password.")
+            else: st.error("Invalid user ID/email or password.")
     with tr, st.form("reg"):
-        st.subheader("Create Admin Account")
+        st.subheader("Create Account")
         if st.session_state.get("registered"): st.success("Admin account created successfully. Continue to Login.")
-        f = dict(full_name=st.text_input("Full Name"), admin_id=st.text_input("Admin ID / Username"), email=st.text_input("Email"), org=st.text_input("Organization / Industrial Estate"), phone=st.text_input("Phone Number"),
-                 password=st.text_input("Password", type="password"), confirm=st.text_input("Confirm Password", type="password"), terms=st.checkbox("I agree to the terms and conditions."))
+        f = dict(full_name=st.text_input("Full Name"), admin_id=st.text_input("User ID / Username"), email=st.text_input("Email"), org=st.text_input("Organization / Facility"), phone=st.text_input("Phone Number"), role=st.selectbox("Role", ["OPERATIONS", "SUSTAINABILITY", "ADMIN"]), password=st.text_input("Password", type="password"), confirm=st.text_input("Confirm Password", type="password"), terms=st.checkbox("I agree to the terms and conditions."))
         if st.form_submit_button("CREATE ADMIN ACCOUNT", use_container_width=True):
             e = auth.register(f)
             if e: st.error(e)

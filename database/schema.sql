@@ -838,6 +838,8 @@ CREATE TABLE public.waste_readings (
     waste_quantity_kg numeric(12,2) NOT NULL,
     recyclable_quantity_kg numeric(12,2) DEFAULT 0 NOT NULL,
     hazardous_quantity_kg numeric(12,2) DEFAULT 0 NOT NULL,
+    fill_level_percent numeric(5,2),
+    fill_rate_percent_per_hour numeric(8,3),
     disposal_method character varying(30) DEFAULT 'LANDFILL'::character varying NOT NULL,
     data_quality_status character varying(12) DEFAULT 'OK'::character varying NOT NULL,
     anomaly_flag boolean DEFAULT false NOT NULL,
@@ -846,6 +848,8 @@ CREATE TABLE public.waste_readings (
     CONSTRAINT ck_waste_disposal CHECK (((disposal_method)::text = ANY ((ARRAY['LANDFILL'::character varying, 'RECYCLING'::character varying, 'INCINERATION'::character varying, 'COMPOSTING'::character varying, 'HAZARDOUS_COLLECTION'::character varying])::text[]))),
     CONSTRAINT ck_waste_not_negative CHECK (((waste_quantity_kg >= (0)::numeric) AND (recyclable_quantity_kg >= (0)::numeric) AND (hazardous_quantity_kg >= (0)::numeric))),
     CONSTRAINT ck_waste_parts_within_total CHECK (((hazardous_quantity_kg <= waste_quantity_kg) AND (recyclable_quantity_kg <= waste_quantity_kg))),
+    CONSTRAINT ck_waste_fill_level CHECK ((fill_level_percent IS NULL OR ((fill_level_percent >= (0)::numeric) AND (fill_level_percent <= (100)::numeric)))),
+    CONSTRAINT ck_waste_fill_rate CHECK ((fill_rate_percent_per_hour IS NULL OR (fill_rate_percent_per_hour >= (0)::numeric))),
     CONSTRAINT ck_waste_quality CHECK (((data_quality_status)::text = ANY ((ARRAY['OK'::character varying, 'FLAGGED'::character varying, 'ESTIMATED'::character varying])::text[]))),
     CONSTRAINT ck_waste_type CHECK (((waste_type)::text = ANY ((ARRAY['Plastic'::character varying, 'Metal'::character varying, 'Organic'::character varying, 'Chemical'::character varying, 'Paper'::character varying, 'General'::character varying])::text[])))
 );
@@ -1509,6 +1513,8 @@ CREATE TABLE raw.raw_sensor_data (
     waste_quantity_kg numeric(16,2),
     recyclable_quantity_kg numeric(16,2),
     hazardous_quantity_kg numeric(16,2),
+    fill_level_percent numeric(5,2),
+    fill_rate_percent_per_hour numeric(8,3),
     aqi integer,
     pm25 numeric(12,2),
     pm10 numeric(12,2),

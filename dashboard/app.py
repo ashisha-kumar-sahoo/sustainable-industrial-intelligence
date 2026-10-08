@@ -1,6 +1,15 @@
 """Sustainable Industrial Intelligence - dashboard entry point.  Run:  cd dashboard && streamlit run app.py
 Responsibilities: page config, theme + styles, login gate, sidebar, routing to the page modules. Everything else lives in
 config.py / styles.py / utils.py, components/, pages/ and services/ (see README.md)."""
+import os
+import sys
+
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DASHBOARD_DIR = os.path.dirname(os.path.abspath(__file__))
+for _path in (ROOT_DIR, DASHBOARD_DIR):
+    if _path not in sys.path:
+        sys.path.insert(0, _path)
+
 import streamlit as st
 import config
 from styles import apply_styles
