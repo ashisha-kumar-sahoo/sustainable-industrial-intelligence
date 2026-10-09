@@ -1,0 +1,13 @@
+﻿AI Assistant KeyError repair - test results
+Generated: 2026-10-09T12:15:37.1481623+05:30
+
+=== New regression tests: tests/dashboard/test_ai_service_fallback.py ===
+
+.........                                                                [100%]
+9 passed in 19.09s
+
+=== Full suite ===
+
+........................................................................ [ 72%]
+............................                                             [100%]
+100 passed in 28.84s

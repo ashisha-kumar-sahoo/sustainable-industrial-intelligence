@@ -1,20 +1,119 @@
-"""Plotly figure builders. Moved unchanged from charts.py (_lay -> apply_layout, trend, compare);
-supporting_chart is the figure part of the 'Supporting metrics' block from pages.domain()."""
-import plotly.graph_objects as go, plotly.express as px
+﻿"""Plotly figure builders used throughout the dashboard."""
+
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
 
 
-def apply_layout(f, dark, title, h=340):
-    t = "#e2e8f0" if dark else "#0f172a"; f.update_layout(title=dict(text=title, x=0, xanchor="left", y=.96, font=dict(size=16)), height=h + 60, margin=dict(l=10, r=10, t=60, b=70), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color=t), legend=dict(orientation="h", yanchor="top", y=-.2, xanchor="left", x=0))
-    f.update_xaxes(gridcolor="rgba(148,163,184,.2)"); f.update_yaxes(gridcolor="rgba(148,163,184,.2)"); return f
-def trend(s, fc, dark, title):
-    f = go.Figure(); f.add_scatter(x=s["timestamp"], y=s["actual"], name="Actual", line=dict(color="#00e5ff", width=2))
-    f.add_scatter(x=s["timestamp"], y=s["expected"], name="Baseline", line=dict(color="#94a3b8", dash="dash"))
-    a = s[s["anom"]]; f.add_scatter(x=a["timestamp"], y=a["actual"], name="Anomaly", mode="markers", marker=dict(color="#ff2d55", size=10, line=dict(color="white", width=1)))
-    if fc is not None and len(fc): f.add_scatter(x=fc["timestamp"], y=fc["forecast"], name="Forecast", line=dict(color="#a3ff12", dash="dot", width=2))
-    return apply_layout(f, dark, title)
-def compare(d, dark, title):
-    f = go.Figure([go.Bar(x=d["label"], y=d["actual"], name="Actual", marker_color="#00e5ff"), go.Bar(x=d["label"], y=d["expected"], name="Baseline", marker_color="#94a3b8")]); f.update_layout(barmode="group"); return apply_layout(f, dark, title)
+GRID_COLOR = "rgba(148, 163, 184, 0.2)"
 
 
-def supporting_chart(df, cols, dark):
-    return apply_layout(px.line(df, x="timestamp", y=cols), dark, "Supporting metrics (mean)")
+def apply_layout(figure, dark: bool, title: str, height: int = 340):
+    """Apply the shared transparent background, typography, and grid styling."""
+    text_color = "#e2e8f0" if dark else "#0f172a"
+    figure.update_layout(
+        title={
+            "text": title,
+            "x": 0,
+            "xanchor": "left",
+            "y": 0.96,
+            "font": {"size": 16},
+        },
+        height=height + 60,
+        margin={"l": 10, "r": 10, "t": 60, "b": 70},
+        paper_bgcolor="rgba(0, 0, 0, 0)",
+        plot_bgcolor="rgba(0, 0, 0, 0)",
+        font={"color": text_color},
+        legend={
+            "orientation": "h",
+            "yanchor": "top",
+            "y": -0.2,
+            "xanchor": "left",
+            "x": 0,
+        },
+    )
+    figure.update_xaxes(gridcolor=GRID_COLOR)
+    figure.update_yaxes(gridcolor=GRID_COLOR)
+    return figure
+
+
+def trend(series, forecast, dark: bool, title: str):
+    """Plot actual values, the baseline, detected anomalies, and forecasts."""
+    figure = go.Figure()
+    figure.add_scatter(
+        x=series["timestamp"],
+        y=series["actual"],
+        name="Actual",
+        line={"color": "#00e5ff", "width": 2},
+    )
+    figure.add_scatter(
+        x=series["timestamp"],
+        y=series["expected"],
+        name="Baseline",
+        line={"color": "#94a3b8", "dash": "dash"},
+    )
+
+    anomalies = series.loc[series["anom"]]
+    figure.add_scatter(
+        x=anomalies["timestamp"],
+        y=anomalies["actual"],
+        name="Anomaly",
+        mode="markers",
+        marker={
+            "color": "#ff2d55",
+            "size": 10,
+            "line": {"color": "white", "width": 1},
+        },
+    )
+
+    if forecast is not None and not forecast.empty:
+        figure.add_scatter(
+            x=forecast["timestamp"],
+            y=forecast["forecast"],
+            name="Forecast",
+            line={"color": "#a3ff12", "dash": "dot", "width": 2},
+        )
+
+    return apply_layout(figure, dark, title)
+
+
+def compare(data, dark: bool, title: str):
+    """Compare actual and baseline values across facilities or zones."""
+    figure = go.Figure(
+        data=[
+            go.Bar(
+                x=data["label"],
+                y=data["actual"],
+                name="Actual",
+                marker_color="#00e5ff",
+            ),
+            go.Bar(
+                x=data["label"],
+                y=data["expected"],
+                name="Baseline",
+                marker_color="#94a3b8",
+            ),
+        ]
+    )
+    figure.update_layout(barmode="group")
+    return apply_layout(figure, dark, title)
+
+
+def supporting_chart(data, columns: list[str], dark: bool):
+    """Plot optional supporting metrics such as AQI components or speed."""
+    # Normalize plotted series to numeric values before passing wide-form data to Plotly.
+    plot_data = data.copy()
+    numeric_columns = []
+    for column in columns:
+        if column in plot_data.columns:
+            converted = pd.to_numeric(plot_data[column], errors="coerce")
+            if converted.notna().any():
+                plot_data[column] = converted
+                numeric_columns.append(column)
+
+    if "timestamp" not in plot_data.columns or not numeric_columns:
+        figure = go.Figure()
+    else:
+        figure = px.line(plot_data, x="timestamp", y=numeric_columns)
+    return apply_layout(figure, dark, "Supporting metrics (mean)")
+

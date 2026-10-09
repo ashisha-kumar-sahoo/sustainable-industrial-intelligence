@@ -93,30 +93,30 @@ def build_decision_summary(
         operational_problems.append({
             "type": "alert",
             "alert_type": alert_type,
-            "priority": alert["priority"],
-            "severity": alert["severity"],
-            "facility_id": alert["facility_id"],
-            "facility_name": alert["facility_name"],
-            "message": alert["message"],
-            "reading_ts": alert["reading_ts"]
+            "priority": alert.get("priority", 0),
+            "severity": alert.get("severity"),
+            "facility_id": alert.get("facility_id"),
+            "facility_name": alert.get("facility_name"),
+            "message": alert.get("message"),
+            "reading_ts": alert.get("reading_ts")
         })
 
     # Add serious AQI issues
     for issue in air_quality_issues:
 
-        if issue["priority"] >= 2:
+        if issue.get("priority", 0) >= 2:
 
             operational_problems.append({
                 "type": "air_quality",
-                "priority": issue["priority"],
+                "priority": issue.get("priority", 0),
                 "severity": "HIGH",
-                "facility_id": issue["facility_id"],
-                "facility_name": issue["facility_name"],
+                "facility_id": issue.get("facility_id"),
+                "facility_name": issue.get("facility_name"),
                 "message": (
-                    f"AQI is {issue['aqi']} "
-                    f"({issue['aqi_category']})"
+                    f"AQI is {issue.get('aqi')} "
+                    f"({issue.get('aqi_category')})"
                 ),
-                "reading_ts": issue["reading_ts"]
+                "reading_ts": issue.get("reading_ts")
             })
 
     # Add traffic issues
@@ -126,13 +126,13 @@ def build_decision_summary(
             "type": "traffic",
             "priority": 2,
             "severity": "HIGH",
-            "facility_id": issue["facility_id"],
-            "facility_name": issue["facility_name"],
+            "facility_id": issue.get("facility_id"),
+            "facility_name": issue.get("facility_name"),
             "message": (
                 f"Traffic congestion is "
-                f"{issue['congestion_level']}"
+                f"{issue.get('congestion_level')}"
             ),
-            "reading_ts": issue["reading_ts"]
+            "reading_ts": issue.get("reading_ts")
         })
 
     # Sort all operational problems
@@ -158,11 +158,11 @@ def build_decision_summary(
             "SENSOR_FAILURE"
         ]:
             data_quality_issues.append({
-                "facility_id": alert["facility_id"],
-                "facility_name": alert["facility_name"],
-                "message": alert["message"],
-                "severity": alert["severity"],
-                "reading_ts": alert["reading_ts"]
+                "facility_id": alert.get("facility_id"),
+                "facility_name": alert.get("facility_name"),
+                "message": alert.get("message"),
+                "severity": alert.get("severity"),
+                "reading_ts": alert.get("reading_ts")
             })
 
     return {

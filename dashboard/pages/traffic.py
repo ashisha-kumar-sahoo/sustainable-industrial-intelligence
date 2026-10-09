@@ -1,5 +1,7 @@
-"""Traffic tab of the Operations page (was one loop iteration of pages.operations). Rendered inside the Operations tabs by pages/operations.py."""
+"""Traffic monitoring tab inside the Operations page."""
+
 from components.domain_panel import domain
 
 
-def traffic(dark): domain("traffic", dark)
+def traffic(dark: bool) -> None:
+    domain("traffic", dark)

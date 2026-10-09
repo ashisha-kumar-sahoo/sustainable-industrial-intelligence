@@ -1,4 +1,18 @@
+import math
+import numbers
 from collections import Counter
+
+
+def _deviation_magnitude(value):
+    """Return a usable absolute deviation, treating None/NaN as no deviation."""
+    if isinstance(value, bool) or not isinstance(value, numbers.Real):
+        return 0.0
+    try:
+        if math.isnan(value):
+            return 0.0
+    except (TypeError, ValueError):
+        return 0.0
+    return abs(float(value))
 
 
 def create_response(summary, evidence, recommended_action, data_basis):
@@ -58,15 +72,21 @@ def create_energy_anomaly_response(
 
     for anomaly in sorted(
             anomalies,
-            key=lambda x: abs(x.get("deviation_pct", 0)),
+            key=lambda x: _deviation_magnitude(x.get("deviation_pct")),
             reverse=True
         )[:5]:
+        deviation = anomaly.get("deviation_pct")
+        deviation_text = (
+            f"{deviation}% deviation"
+            if deviation is not None
+            else "deviation unavailable"
+        )
         evidence.append(
             f"{anomaly.get('facility_name')}: "
-            f"{anomaly.get('deviation_pct')}% deviation "
+            f"{deviation_text} "
             f"({anomaly.get('actual_value')} kWh actual vs "
             f"{anomaly.get('expected_value')} kWh expected); "
-            f"severity {anomaly.get('severity', 'unclassified')}."
+            f"severity {anomaly.get('severity') or 'unclassified'}."
         )
 
     recommended_action = (

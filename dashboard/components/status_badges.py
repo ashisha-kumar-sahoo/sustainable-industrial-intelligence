@@ -1,9 +1,26 @@
-"""Severity badges/colour classes. EMO moved from pages.py; SEVERITY_CLASS is the mapping that was inlined in kpi_html."""
-EMO = {"HIGH": "🔴", "MEDIUM": "🟡", "NORMAL": "🟢", "LOW": "🟢"}
-SEVERITY_CLASS = {"HIGH": "critical", "MEDIUM": "warning", "NORMAL": "normal"}  # KPI card border class
+"""Shared severity labels and CSS classes."""
+
+EMO = {
+    "CRITICAL": "🚨",
+    "HIGH": "🔴",
+    "MEDIUM": "🟠",
+    "LOW": "🟡",
+    "NORMAL": "🟢",
+    "UNKNOWN": "⚪",
+}
 
 
-def badge(sv): return f"{EMO[sv]} {sv}"
+def badge(severity: str) -> str:
+    """Return an emoji and severity label with a safe fallback."""
+    normalized = str(severity or "UNKNOWN").upper()
+    return f"{EMO.get(normalized, EMO['UNKNOWN'])} {normalized}"
 
 
-def alert_class(sv): return "critical" if sv == "HIGH" else "warning"  # alert card left-border class
+def alert_class(severity: str) -> str:
+    """Return a CSS class for alert severity styling."""
+    normalized = str(severity or "").upper()
+    if normalized in {"CRITICAL", "HIGH"}:
+        return "critical"
+    if normalized == "MEDIUM":
+        return "warning"
+    return "normal"

@@ -1,0 +1,40 @@
+--- backups/ai/assistant/data_retriever.py+++ ai/assistant/data_retriever.py@@ -190,8 +190,8 @@                 "facility_id": row[0],
+                 "facility_name": row[1],
+                 "reading_ts": row[2],
+-                "energy_consumption_kwh": float(row[3]),
+-                "peak_demand_kw": float(row[4]),
++                "energy_consumption_kwh": float(row[3]) if row[3] is not None else None,
++                "peak_demand_kw": float(row[4]) if row[4] is not None else None,
+                 "anomaly_flag": row[5],
+                 "anomaly_reason": row[6]
+             })
+@@ -279,8 +279,8 @@                 "facility_id": row[0],
+                 "facility_name": row[1],
+                 "reading_ts": row[2],
+-                "water_consumption_liters": float(row[3]),
+-                "flow_rate": float(row[4]),
++                "water_consumption_liters": float(row[3]) if row[3] is not None else None,
++                "flow_rate": float(row[4]) if row[4] is not None else None,
+                 "anomaly_flag": row[5],
+                 "anomaly_reason": row[6]
+             })
+@@ -436,9 +436,9 @@                 "facility_name": row[1],
+                 "reading_ts": row[2],
+                 "waste_type": row[3],
+-                "waste_quantity_kg": float(row[4]),
+-                "recyclable_quantity_kg": float(row[5]),
+-                "hazardous_quantity_kg": float(row[6]),
++                "waste_quantity_kg": float(row[4]) if row[4] is not None else None,
++                "recyclable_quantity_kg": float(row[5]) if row[5] is not None else None,
++                "hazardous_quantity_kg": float(row[6]) if row[6] is not None else None,
+                 "fill_level_percent": float(row[7]) if row[7] is not None else None,
+                 "fill_rate_percent_per_hour": float(row[8]) if row[8] is not None else None,
+                 "disposal_method": row[9],
+@@ -545,7 +545,7 @@                     float(row[5]) if row[5] is not None else None
+                 ),
+                 "congestion_level": row[6],
+-                "lane_occupancy_percent": float(row[7])
++                "lane_occupancy_percent": float(row[7]) if row[7] is not None else None
+             })
+ 
+         return traffic_data

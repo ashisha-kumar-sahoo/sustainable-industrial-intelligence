@@ -1,57 +1,185 @@
-"""Pure data shaping for the domain pages (energy, water, waste and the shared KPI / trend / score maths).
-Moved from pages.py: kpis_data (per-dataset part -> kpi_for), series, and the calculation parts of domain() and overview().
-No Streamlit calls here: callers pass already-filtered DataFrames."""
+"""Pure data-shaping helpers for resource and domain dashboard pages.
+
+These functions receive already-filtered DataFrames and contain no Streamlit
+calls, which keeps calculations straightforward to test.
+"""
+
+from __future__ import annotations
+
 import pandas as pd
+
 from config import KP
 from utils import fname
 
 
-def kpi_for(ds, r):
-    """(label, value text, delta text, severity, deviation %) for one dataset's filtered AI results."""
-    lab, unit, how = KP[ds]
-    if r.empty: return (lab, "–", "no data", "NORMAL", 0)
-    l = r[r["timestamp"] > r["timestamp"].max() - pd.Timedelta(hours=24)]; v, e = getattr(l["actual_value"], how)(), getattr(l["expected_value"], how)(); dv = (v / e - 1) * 100 if e else 0
-    return (lab, f"{v:,.0f} {unit}".strip(), f"{'↑' if dv >= 0 else '↓'} {abs(dv):.1f}% vs baseline", "HIGH" if dv >= 30 else "MEDIUM" if dv >= 15 else "NORMAL", dv)
+def kpi_for(dataset: str, results: pd.DataFrame) -> tuple:
+    """Return label, value, baseline delta, severity, and deviation percent."""
+    label, unit, aggregation = KP[dataset]
+    if results.empty:
+        return label, "–", "no data", "NORMAL", 0.0
+
+    latest_timestamp = results["timestamp"].max()
+    cutoff = latest_timestamp - pd.Timedelta(hours=24)
+    recent_results = results.loc[results["timestamp"] > cutoff]
+
+    if recent_results.empty:
+        return label, "–", "no recent data", "NORMAL", 0.0
+
+    actual_value = getattr(recent_results["actual_value"], aggregation)()
+    expected_value = getattr(recent_results["expected_value"], aggregation)()
+    deviation_pct = (actual_value / expected_value - 1) * 100 if expected_value else 0
+
+    if deviation_pct >= 30:
+        severity = "HIGH"
+    elif deviation_pct >= 15:
+        severity = "MEDIUM"
+    else:
+        severity = "NORMAL"
+
+    direction = "↑" if deviation_pct >= 0 else "↓"
+    value_text = f"{actual_value:,.0f} {unit}".strip()
+    delta_text = f"{direction} {abs(deviation_pct):.1f}% vs baseline"
+
+    return label, value_text, delta_text, severity, float(deviation_pct)
 
 
-def series(r, how):
-    return r.groupby("timestamp").agg(actual=("actual_value", how), expected=("expected_value", how), anom=("is_anomaly", "max")).reset_index()
+def series(results: pd.DataFrame, aggregation: str) -> pd.DataFrame:
+    """Aggregate actuals, baselines, and anomaly flags by timestamp."""
+    if results.empty:
+        return pd.DataFrame(columns=["timestamp", "actual", "expected", "anom"])
+
+    return (
+        results.groupby("timestamp")
+        .agg(
+            actual=("actual_value", aggregation),
+            expected=("expected_value", aggregation),
+            anom=("is_anomaly", "max"),
+        )
+        .reset_index()
+    )
 
 
-def forecast_series(fc, how):
-    """Aggregate a (filtered) forecast frame to one line, or None when there is no forecast."""
-    return fc.groupby("timestamp").agg(forecast=("forecast_value", how)).reset_index() if len(fc) else None
+def forecast_series(forecasts: pd.DataFrame, aggregation: str) -> pd.DataFrame | None:
+    """Aggregate forecast values by timestamp, or return None when unavailable."""
+    if forecasts.empty:
+        return None
+
+    return (
+        forecasts.groupby("timestamp")
+        .agg(forecast=("forecast_value", aggregation))
+        .reset_index()
+    )
 
 
-def group_column(ds): return "zone_id" if ds == "environment" else "facility_id"
+def group_column(dataset: str) -> str:
+    """Return the geographic grouping column used for this domain."""
+    return "zone_id" if dataset == "environment" else "facility_id"
 
 
-def latest_by_group(r, how, by):
-    """Last-24h actual vs expected per facility (or per zone for environment) for the comparison bar chart."""
-    g = r[r["timestamp"] > r["timestamp"].max() - pd.Timedelta(hours=24)].groupby(by).agg(actual=("actual_value", how), expected=("expected_value", how)).reset_index()
-    g["label"] = g[by].map(fname) if by == "facility_id" else g[by]
-    return g
+def latest_by_group(
+    results: pd.DataFrame,
+    aggregation: str,
+    group_by: str,
+) -> pd.DataFrame:
+    """Compare the last 24 hours of actual and baseline values by group."""
+    if results.empty:
+        return pd.DataFrame(columns=[group_by, "actual", "expected", "label"])
+
+    cutoff = results["timestamp"].max() - pd.Timedelta(hours=24)
+    recent_results = results.loc[results["timestamp"] > cutoff]
+    grouped = (
+        recent_results.groupby(group_by)
+        .agg(
+            actual=("actual_value", aggregation),
+            expected=("expected_value", aggregation),
+        )
+        .reset_index()
+    )
+
+    if group_by == "facility_id":
+        grouped["label"] = grouped[group_by].map(fname)
+    else:
+        grouped["label"] = grouped[group_by]
+
+    return grouped
 
 
-def latest_anomalies(r):
-    return r[r["is_anomaly"]].sort_values("timestamp", ascending=False).head(10)
+def latest_anomalies(results: pd.DataFrame) -> pd.DataFrame:
+    """Return up to ten newest anomalies."""
+    if results.empty or "is_anomaly" not in results:
+        return results.head(0).copy()
+
+    return (
+        results.loc[results["is_anomaly"]]
+        .sort_values("timestamp", ascending=False)
+        .head(10)
+    )
 
 
-def bin_fill_status(r, fc):
-    """Waste: current fill % per bin/zone, plus predicted peak from the forecast when available."""
-    cur = r.sort_values("timestamp").groupby(["facility_id", "zone_id"]).tail(1)[["facility_id", "zone_id", "actual_value", "severity"]].rename(columns={"actual_value": "current_%"})
-    if len(fc): cur = cur.merge(fc.groupby(["facility_id", "zone_id"])["forecast_value"].max().rename("predicted_%").reset_index(), on=["facility_id", "zone_id"], how="left")
-    return cur
+def bin_fill_status(results: pd.DataFrame, forecasts: pd.DataFrame) -> pd.DataFrame:
+    """Build current bin fill levels and include forecast peaks when available."""
+    if results.empty:
+        return pd.DataFrame(
+            columns=["facility_id", "zone_id", "current_%", "severity"]
+        )
+
+    current_bins = (
+        results.sort_values("timestamp")
+        .groupby(["facility_id", "zone_id"])
+        .tail(1)[["facility_id", "zone_id", "actual_value", "severity"]]
+        .rename(columns={"actual_value": "current_%"})
+    )
+
+    if not forecasts.empty:
+        forecast_peaks = (
+            forecasts.groupby(["facility_id", "zone_id"])["forecast_value"]
+            .max()
+            .rename("predicted_%")
+            .reset_index()
+        )
+        current_bins = current_bins.merge(
+            forecast_peaks,
+            on=["facility_id", "zone_id"],
+            how="left",
+        )
+
+    return current_bins
 
 
-def supporting_metrics(x, cols):
-    return x.groupby("timestamp")[cols].mean().reset_index()
+def supporting_metrics(data: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    """Calculate mean supporting metrics for each timestamp."""
+    if data.empty or not columns:
+        return pd.DataFrame(columns=["timestamp", *columns])
+
+    return data.groupby("timestamp")[columns].mean().reset_index()
 
 
-def sustainability_score(K):
-    """Draft overall score: 100 - 2 x mean(24h deviation above baseline capped at 50%)."""
-    return max(0, 100 - 2 * sum(min(50, max(0, v[4])) for v in K.values()) / len(K))
+def sustainability_score(kpis: dict) -> float:
+    """Calculate the prototype score from positive 24-hour deviations.
+
+    This is a transparent heuristic score, not a certified sustainability
+    rating. Each domain's positive deviation is capped at 50 percent.
+    """
+    if not kpis:
+        return 0.0
+
+    capped_deviations = [
+        min(50, max(0, values[4]))
+        for values in kpis.values()
+        if len(values) > 4
+    ]
+    if not capped_deviations:
+        return 0.0
+
+    return max(0.0, 100 - 2 * sum(capped_deviations) / len(capped_deviations))
 
 
-def domain_scorecard(K):
-    return pd.DataFrame([(v[0], f"{max(0, 100 - 2 * min(50, max(0, v[4]))):.0f}", v[2]) for v in K.values()], columns=["Domain", "Score /100", "Basis"])
+def domain_scorecard(kpis: dict) -> pd.DataFrame:
+    """Create a compact scorecard showing each domain's heuristic score."""
+    rows = []
+    for values in kpis.values():
+        label, _value, delta, _severity, deviation = values
+        score = max(0, 100 - 2 * min(50, max(0, deviation)))
+        rows.append((label, f"{score:.0f}", delta))
+
+    return pd.DataFrame(rows, columns=["Domain", "Score /100", "Basis"])

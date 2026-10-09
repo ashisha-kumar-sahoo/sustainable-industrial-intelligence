@@ -1,0 +1,13 @@
+﻿AI Assistant end-to-end repair - test results
+Generated: 2026-10-09T12:49:38.4511863+05:30
+
+=== Assistant dashboard tests: tests/dashboard/test_ai_service_fallback.py ===
+
+...........                                                              [100%]
+11 passed in 23.17s
+
+=== Full suite ===
+
+........................................................................ [ 70%]
+..............................                                           [100%]
+102 passed in 33.19s

@@ -1,0 +1,65 @@
+AI Assistant repair — test results
+Date: 2026-10-09
+Audit dir: diagnostics/assistant_fix_20261009_114723
+
+====================================================================
+1) New regression suite
+   Command: python -m pytest tests/test_assistant_repair.py -v --no-header -p no:cacheprovider
+   Result:  13 passed in 3.24s
+
+   tests/test_assistant_repair.py::test_biggest_problems_question_succeeds PASSED
+   tests/test_assistant_repair.py::test_empty_retrieval_results_do_not_crash PASSED
+   tests/test_assistant_repair.py::test_missing_dictionary_keys_are_tolerated PASSED
+   tests/test_assistant_repair.py::test_numeric_none_values_do_not_crash PASSED
+   tests/test_assistant_repair.py::test_risk_score_and_impact_estimator_handle_none PASSED
+   tests/test_assistant_repair.py::test_energy_anomaly_response_handles_none_deviation PASSED
+   tests/test_assistant_repair.py::test_pandas_null_numeric_values_are_treated_as_missing PASSED
+   tests/test_assistant_repair.py::test_pandas_null_energy_in_assistant PASSED
+   tests/test_assistant_repair.py::test_missing_optional_columns_do_not_crash PASSED
+   tests/test_assistant_repair.py::test_no_recent_sensor_readings PASSED
+   tests/test_assistant_repair.py::test_partial_domain_data_is_handled PASSED
+   tests/test_assistant_repair.py::test_valid_data_produces_normal_answer PASSED
+   tests/test_assistant_repair.py::test_internal_exception_is_reported_without_leaking_details PASSED
+
+====================================================================
+2) Full suite (post-fix)
+   Command: python -m pytest -q --no-header -p no:cacheprovider
+   Result:  91 passed in 11.08s
+   (78 pre-existing + 13 new)
+
+   Baseline before this repair: 78 passed.
+
+====================================================================
+3) Reproduction harnesses (before -> after)
+   a) find_highest_waste_producer on a record with NO waste_type key
+      before: KeyError: 'waste_type'
+      after : returns {... 'waste_type': None}
+   b) find_highest_energy_consumer / water on records missing keys
+      before: KeyError ('facility_name' / 'reading_ts')
+      after : keys default to None
+   c) risk_score.calculate_risk({'deviation_pct': None})
+      before: TypeError: bad operand type for abs(): 'NoneType'
+      after : 'LOW'
+   d) impact_estimator.calculate_excess({'message': None})
+      before: TypeError: argument of type 'NoneType' is not iterable
+      after : None
+      impact_estimator.calculate_excess_quantity({'message': None})
+      before: TypeError: expected string or bytes-like object, got 'NoneType'
+      after : None
+   e) process_question("Which facilities currently have energy anomalies?")
+      with M3 deviation_pct=None
+      before: errors=[{type: TypeError, abs None}] -> "processing failed"
+      after : errors=[] , evidence "deviation unavailable"
+   f) process_question("What are today's biggest problems?")
+      with an alert message=NULL
+      before: errors=[{type: TypeError, NoneType not iterable}]
+      after : errors=[] , normal prioritised answer
+   g) process_question("What if Facility A reduces energy by 20%?")
+      with the facility's latest energy = NULL
+      before: errors=[{type: TypeError, float() argument ... not 'NoneType'}]
+      after : errors=[] , "No current energy data is available for this simulation."
+
+====================================================================
+4) No database, network, or LLM was used by the tests.
+   process_question is always called with use_llm=False and the PostgreSQL
+   retrievers are monkeypatched with mocked rows.

@@ -75,11 +75,11 @@ The database is organized into three logical layers:
 
 ### `raw` schema
 
-The `raw` schema is the landing zone for sensor payloads exactly as received.
+The `raw` schema is the landing zone for sensor payloads exactly as received. New readings retain the complete JSON object in `raw_payload`; existing historical rows receive `{}` because the original incoming JSON was not stored in the old schema.
 
 Main table:
 
-- `raw.raw_sensor_data`
+- `raw.raw_sensor_data` — typed common fields plus `raw_payload` JSONB, which retains the complete incoming record.
 
 ### `etl` schema
 
@@ -94,6 +94,17 @@ Main tables:
 ### `public` schema
 
 The `public` schema contains clean application-facing data, views, alerts, and facility summaries used by the dashboard and AI/ML modules.
+
+## Existing database migration workflow
+
+For an existing local `smart_industrial_estate` database, do not rerun `schema.sql` or `seed.sql`. Back up the database first, then apply the new additive migration from the project root:
+
+```powershell
+pg_dump -U postgres -h localhost -p 5432 -d smart_industrial_estate -F c -f "$HOME\smart_industrial_estate_backup.dump"
+psql -U postgres -h localhost -p 5432 -d smart_industrial_estate -v ON_ERROR_STOP=1 -f ".\database\migrations\002_add_equipment_safety_telemetry.sql"
+```
+
+Migration `002_add_equipment_safety_telemetry.sql` adds `public.equipment_readings` and `public.safety_readings`, expands allowed sensor types, preserves full raw JSON payloads, and inserts missing synthetic equipment/safety sensor registrations without deleting existing rows. Migration `001_add_waste_bin_telemetry.sql` is the earlier waste-bin telemetry migration and should only be applied if that change has not already been applied.
 
 ## Tables
 
@@ -141,7 +152,15 @@ Important fields include:
 - `calibration_due_date`
 - `last_reading_at`
 
-Seed data: **140 sensors**
+Seed data: **140 sensors** before the additive equipment/safety migration. Migration 002 registers missing synthetic equipment and safety sensors per facility; it does not rewrite existing sensor identities.
+
+### `public.equipment_readings`
+
+Stores time-series machine telemetry used by equipment anomaly detection and inspection prioritization: equipment identifier, temperature, vibration, operating hours, utilization, and status. Rows are idempotent by `(sensor_id, reading_ts)`.
+
+### `public.safety_readings`
+
+Stores safety telemetry such as gas readings, smoke/fire/emergency signals, plus optional incident-context fields used by the safety risk pipeline. Simulator-provided incident labels and response times are synthetic examples, not real incident records. Rows are idempotent by `(sensor_id, reading_ts)`.
 
 ---
 
@@ -511,6 +530,8 @@ Consumes:
 
 - `public.energy_readings`
 - `public.water_readings`
+- `public.equipment_readings`
+- `public.safety_readings`
 - `public.waste_readings`
 - Relevant facility/sensor tables and summaries
 

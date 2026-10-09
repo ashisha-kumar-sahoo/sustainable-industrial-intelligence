@@ -267,3 +267,17 @@ pytest -q
 ```
 
 The current automated suite covers the operations/integration tests. Dashboard and database smoke tests additionally depend on a reachable PostgreSQL instance.
+
+
+## Model Folder Ownership
+
+The overlap between `ai/operations/` and `ml/` is documented in [`docs/architecture/model-folder-audit.md`](docs/architecture/model-folder-audit.md). Do not delete either tree without migrating its data contracts, unique functionality, and tests.
+
+
+## Local database upgrade for equipment and safety
+
+The existing PostgreSQL database is preserved. Back up `smart_industrial_estate`, then apply `database/migrations/002_add_equipment_safety_telemetry.sql` from PowerShell before running the simulator/loader. See [`FINAL_SETUP.md`](FINAL_SETUP.md) and [`database/README.md`](database/README.md) for exact commands. This migration adds equipment/safety telemetry storage and complete JSONB raw payload capture; it does not drop or recreate the database.
+
+## Model folder ownership
+
+`ml/` is the runtime canonical model tree used by the dashboard. `ai/operations/` contains a parallel research/legacy implementation with some distinct functions; see [`docs/AI_MODEL_FOLDER_AUDIT.md`](docs/AI_MODEL_FOLDER_AUDIT.md). These folders are not byte-for-byte copies and must not be bulk-deleted without reconciling their different contracts and tests.

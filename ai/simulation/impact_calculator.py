@@ -1,3 +1,6 @@
+import math
+
+
 def calculate_energy_reduction(
     baseline_value,
     reduction_pct
@@ -7,7 +10,18 @@ def calculate_energy_reduction(
     after applying a percentage reduction.
     """
 
-    baseline_value = float(baseline_value)
+    try:
+        baseline_value = float(baseline_value)
+    except (TypeError, ValueError):
+        raise ValueError(
+            "A numeric baseline energy value is required."
+        )
+
+    if not math.isfinite(baseline_value):
+        raise ValueError(
+            "A finite baseline energy value is required."
+        )
+
     reduction_pct = float(reduction_pct)
 
     reduction_amount = (
