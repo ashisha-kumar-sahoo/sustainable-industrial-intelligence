@@ -2,7 +2,7 @@
 import pandas as pd
 import streamlit as st
 
-from config import DB, DS, RECO
+from config import DB, DS, RECO, active_domains
 from db import query
 from utils import fname
 from services.database_service import results
@@ -27,6 +27,10 @@ def alerts():
                 END,
                 a.reading_ts DESC
         """)
+        if "traffic" not in active_domains() and not d.empty:
+            d = d[~d["alert_type"].astype(str).str.contains(
+                r"TRAFFIC|CONGESTION|PARKING|VEHICLE", case=False, na=False
+            )].copy()
         if d.empty:
             return pd.DataFrame()
         d["timestamp"] = pd.to_datetime(d["reading_ts"])
@@ -67,7 +71,10 @@ def alerts():
                 title=f"{fname(x['facility_id'])} ({x['zone_id']}) {ds} {x['dev']:+.0f}% vs baseline",
                 evidence_actual=round(x["a"], 1), evidence_expected=round(x["e"], 1),
                 deviation_pct=round(x["dev"], 1), recommendation=RECO[ds],
-                insight_text=f"{ds.capitalize()} at {fname(x['facility_id'])} is about {x['dev']:.0f}% from its recent baseline.",
+                insight_text=(
+                    f"{ds.capitalize()} at {fname(x['facility_id'])} is about "
+                    f"{x['dev']:.0f}% from its recent baseline."
+                ),
                 status="Open"
             ))
     return pd.DataFrame(rows)

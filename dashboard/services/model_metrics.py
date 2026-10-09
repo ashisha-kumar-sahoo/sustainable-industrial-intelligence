@@ -1,65 +1,114 @@
-"""Transparent, data-driven model metrics for the demo.
+"""Transparent backtest and anomaly-rate metrics for the prototype dashboard.
 
-Metrics are computed from the current PostgreSQL readings when available.
-Forecast MAE/RMSE use a one-step naive holdout backtest. Anomaly detection has
-no ground-truth labels in the prototype, so the dashboard reports anomaly rate
-and explicitly states that precision/recall are not claimed.
+Forecast errors use a one-step persistence baseline on a holdout tail. The
+prototype has no labelled anomaly ground truth, so it reports anomaly rates
+rather than claiming precision, recall, or a validated classifier score.
 """
+
 import numpy as np
 import pandas as pd
 
 from services.database_service import raw
 
+VALUE_COLUMNS = {
+    "energy": "kwh",
+    "water": "kl",
+    "waste": "fill_pct",
+    "environment": "aqi",
+    "traffic": "vehicles",
+}
+METRICS_DATASETS = tuple(VALUE_COLUMNS)
 
-def _forecast_metrics(ds):
-    d = raw(ds, limit=5000)
-    if d.empty or "timestamp" not in d:
+
+def _forecast_metrics(dataset: str) -> dict | None:
+    """Evaluate a one-step persistence baseline on recent readings."""
+    data = raw(dataset, limit=5000)
+    if data.empty or "timestamp" not in data.columns:
         return None
-    value_col = {"energy": "kwh", "water": "kl", "waste": "fill_pct", "environment": "aqi", "traffic": "vehicles"}.get(ds)
-    if value_col not in d:
+
+    value_column = VALUE_COLUMNS.get(dataset)
+    if not value_column or value_column not in data.columns:
         return None
-    d = d[["timestamp", "facility_id", value_col]].dropna().sort_values("timestamp")
-    if len(d) < 20:
+
+    data = (
+        data[["timestamp", "facility_id", value_column]]
+        .dropna()
+        .sort_values("timestamp")
+        .copy()
+    )
+    if len(data) < 20:
         return None
-    # One-step holdout using previous observation per facility.
-    d["pred"] = d.groupby("facility_id")[value_col].shift(1)
-    test = d.dropna(subset=["pred"]).tail(max(10, min(100, len(d)//5)))
-    if test.empty:
+
+    # The previous observation for the same facility is the prediction.
+    data["prediction"] = data.groupby("facility_id")[value_column].shift(1)
+    holdout_size = max(10, min(100, len(data) // 5))
+    holdout = data.dropna(subset=["prediction"]).tail(holdout_size)
+    if holdout.empty:
         return None
-    err = test[value_col].to_numpy(dtype=float) - test["pred"].to_numpy(dtype=float)
+
+    errors = (
+        holdout[value_column].to_numpy(dtype=float)
+        - holdout["prediction"].to_numpy(dtype=float)
+    )
     return {
         "model": "One-step persistence baseline",
-        "dataset": ds,
-        "n_test": int(len(test)),
-        "mae": round(float(np.mean(np.abs(err))), 3),
-        "rmse": round(float(np.sqrt(np.mean(err ** 2))), 3),
+        "dataset": dataset,
+        "n_test": int(len(holdout)),
+        "mae": round(float(np.mean(np.abs(errors))), 3),
+        "rmse": round(float(np.sqrt(np.mean(errors**2))), 3),
     }
 
 
-def collect_metrics():
-    metrics = []
-    for ds in ("energy", "water", "waste", "environment", "traffic"):
-        try:
-            m = _forecast_metrics(ds)
-            if m:
-                metrics.append(m)
-        except Exception:
-            pass
+def _anomaly_rate(dataset: str) -> dict | None:
+    """Calculate an IQR-based outlier rate without claiming labelled accuracy."""
+    data = raw(dataset, limit=5000)
+    value_column = VALUE_COLUMNS[dataset]
+    if data.empty or value_column not in data.columns:
+        return None
 
-    anomaly_rows = []
-    for ds in ("energy", "water", "waste", "environment", "traffic"):
-        try:
-            d = raw(ds, limit=5000)
-            if not d.empty:
-                value_col = {"energy":"kwh","water":"kl","waste":"fill_pct","environment":"aqi","traffic":"vehicles"}[ds]
-                vals = pd.to_numeric(d[value_col], errors="coerce").dropna()
-                if len(vals):
-                    q1, q3 = vals.quantile([.25, .75])
-                    iqr = q3 - q1
-                    flags = (vals < q1 - 1.5*iqr) | (vals > q3 + 1.5*iqr)
-                    anomaly_rows.append({"dataset": ds, "observations": int(len(vals)), "anomaly_rate_pct": round(float(flags.mean()*100), 2)})
-        except Exception:
-            pass
+    values = pd.to_numeric(data[value_column], errors="coerce").dropna()
+    if values.empty:
+        return None
 
-    return {"forecast": metrics, "anomaly": anomaly_rows,
-            "anomaly_note": "No ground-truth anomaly labels are present in the prototype; precision/recall are therefore not claimed."}
+    first_quartile, third_quartile = values.quantile([0.25, 0.75])
+    interquartile_range = third_quartile - first_quartile
+    lower_bound = first_quartile - 1.5 * interquartile_range
+    upper_bound = third_quartile + 1.5 * interquartile_range
+    outliers = (values < lower_bound) | (values > upper_bound)
+
+    return {
+        "dataset": dataset,
+        "observations": int(len(values)),
+        "anomaly_rate_pct": round(float(outliers.mean() * 100), 2),
+    }
+
+
+def collect_metrics() -> dict:
+    """Collect available metrics while allowing the dashboard to remain usable."""
+    forecast_metrics = []
+    anomaly_metrics = []
+
+    for dataset in METRICS_DATASETS:
+        try:
+            metric = _forecast_metrics(dataset)
+            if metric:
+                forecast_metrics.append(metric)
+        except Exception:
+            # Missing database access should not prevent other pages rendering.
+            continue
+
+        try:
+            metric = _anomaly_rate(dataset)
+            if metric:
+                anomaly_metrics.append(metric)
+        except Exception:
+            continue
+
+    return {
+        "forecast": forecast_metrics,
+        "anomaly": anomaly_metrics,
+        "anomaly_note": (
+            "No ground-truth anomaly labels are present in the prototype; "
+            "precision/recall are therefore not claimed."
+        ),
+    }

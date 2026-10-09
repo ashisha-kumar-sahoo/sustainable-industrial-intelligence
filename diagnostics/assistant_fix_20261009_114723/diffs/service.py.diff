@@ -1,0 +1,83 @@
+--- backups/ai/assistant/service.py+++ ai/assistant/service.py@@ -156,13 +156,22 @@ 
+         baseline_row = water_rows[0] if facility_name else None
+         if baseline_row:
+-            baseline_value = baseline_row.get("water_consumption_liters") or 0
++            baseline_value = baseline_row.get("water_consumption_liters")
+             scenario_facility = baseline_row.get("facility_name")
+         else:
+-            baseline_value = sum(
+-                row.get("water_consumption_liters") or 0 for row in water_rows
+-            )
++            valid_water_values = [
++                row.get("water_consumption_liters")
++                for row in water_rows
++                if row.get("water_consumption_liters") is not None
++            ]
++            baseline_value = sum(valid_water_values) if valid_water_values else None
+             scenario_facility = "All facilities"
++
++        # Missing telemetry must not be simulated as zero consumption.
++        if baseline_value is None:
++            return {
++                "message": "No current water data is available for this simulation."
++            }, ""
+ 
+         simulated_value = round(
+             baseline_value * (1 - reduction_pct / 100),
+@@ -187,12 +196,18 @@         if not energy_rows:
+             return {"message": "No current energy data is available for this simulation."}, ""
+ 
++        valid_energy_values = [
++            row.get("energy_consumption_kwh")
++            for row in energy_rows
++            if row.get("energy_consumption_kwh") is not None
++        ]
++        if not valid_energy_values:
++            return {"message": "No current energy data is available for this simulation."}, ""
++
+         baseline = {
+             "facility_id": None,
+             "facility_name": "All facilities",
+-            "energy_consumption_kwh": sum(
+-                row.get("energy_consumption_kwh") or 0 for row in energy_rows
+-            ),
++            "energy_consumption_kwh": sum(valid_energy_values),
+         }
+     else:
+         baseline = next(
+@@ -210,10 +225,17 @@     if not baseline:
+         return {"message": f"No latest energy data found for {facility_name}."}, "energy_readings"
+ 
++    baseline_value = baseline.get("energy_consumption_kwh")
++    if baseline_value is None:
++        # Missing telemetry must not be simulated as zero consumption.
++        return {
++            "message": "No current energy data is available for this simulation."
++        }, ""
++
+     scenario = simulate_energy_reduction(
+         baseline["facility_id"],
+         baseline["facility_name"],
+-        baseline["energy_consumption_kwh"],
++        baseline_value,
+         reduction_pct,
+     )
+     return scenario, "energy_readings"
+@@ -867,11 +889,17 @@                 context,
+             )
+         except Exception as exc:
++            # Keep only the failure type for diagnostics. Raw exception text can
++            # contain connection strings, file paths, or other internal detail,
++            # so it is never surfaced to end users.
+             result["errors"].append(
+                 {
+                     "stage": "data_or_decision",
+                     "type": type(exc).__name__,
+-                    "message": str(exc),
++                    "message": (
++                        "Internal data or intelligence processing error; "
++                        "no numerical result is available."
++                    ),
+                 }
+             )
+             decision = {

@@ -15,9 +15,32 @@ APP_ICON = "🏭"
 APP_LAYOUT = "wide"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
-USERS_FILE = os.path.join(BASE_DIR, "users.json")
+# Keep account records outside the source tree so passwords and personal
+# details are not accidentally committed to GitHub.
+DEFAULT_USER_DIRECTORY = os.path.join(
+    os.path.expanduser("~"), ".sustainable-industrial-intelligence"
+)
+USERS_FILE = os.getenv(
+    "USERS_FILE",
+    os.path.join(DEFAULT_USER_DIRECTORY, "users.json"),
+)
 
-DB = os.getenv("DATABASE_URL")
+_database_url = os.getenv("DATABASE_URL", "").strip()
+if _database_url and "CHANGE_ME" not in _database_url:
+    DB = _database_url
+elif os.getenv("DB_PASSWORD"):
+    # Build a correctly escaped SQLAlchemy URL from the canonical DB_* settings.
+    from sqlalchemy.engine import URL
+    DB = URL.create(
+        "postgresql+psycopg2",
+        username=os.getenv("DB_USER", "postgres"),
+        password=os.getenv("DB_PASSWORD"),
+        host=os.getenv("DB_HOST", "localhost"),
+        port=int(os.getenv("DB_PORT", "5432")),
+        database=os.getenv("DB_NAME", "smart_industrial_estate"),
+    )
+else:
+    DB = None
 MODE = "PostgreSQL — source of truth" if DB else "Synthetic / sensor simulation (demo fallback)"
 
 
@@ -33,7 +56,7 @@ LON = float(os.getenv("ESTATE_LON", 85.84))
 
 
 def assistant_url():
-    return os.getenv("ASSISTANT_URL")
+    return os.getenv("ASSISTANT_URL", "http://127.0.0.1:8000/api/ask").strip()
 
 
 def simulation_url():
@@ -151,3 +174,19 @@ FACILITY_PROFILES = {
         "domains": ["energy", "water", "waste", "environment", "equipment", "safety"],
     },
 }
+
+def current_profile():
+    """Return the selected facility profile, with environment/default fallback."""
+    selected = os.getenv("FACILITY_PROFILE", "Industrial Estate")
+    try:
+        import streamlit as st
+        selected = st.session_state.get("facility_profile", selected)
+    except Exception:
+        pass
+    return selected if selected in FACILITY_PROFILES else "Industrial Estate"
+
+
+def active_domains():
+    """Domains enabled for the selected facility profile."""
+    return list(FACILITY_PROFILES[current_profile()]["domains"])
+

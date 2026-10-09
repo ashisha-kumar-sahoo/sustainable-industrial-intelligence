@@ -5,7 +5,6 @@ Sustainable Industrial Intelligence.
 
 import os
 
-import psycopg2
 from dotenv import load_dotenv
 
 
@@ -18,6 +17,11 @@ def get_connection():
 
     Configuration is read from environment variables.
     """
+
+    try:
+        import psycopg2
+    except ImportError as exc:
+        raise RuntimeError("PostgreSQL driver is missing. Install requirements.txt first.") from exc
 
     return psycopg2.connect(
         host=os.getenv("DB_HOST", "localhost"),

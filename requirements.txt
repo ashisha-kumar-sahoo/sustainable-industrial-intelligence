@@ -13,3 +13,4 @@ openpyxl
 pytest
 pytest-cov
 python-dateutil
+pydeck

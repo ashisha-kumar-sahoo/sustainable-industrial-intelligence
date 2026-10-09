@@ -1,0 +1,6 @@
+--- backups/dashboard/components/charts.py+++ dashboard/components/charts.py@@ -1,5 +1,6 @@ """Plotly figure builders used throughout the dashboard."""
+ 
++import pandas as pd
+ import plotly.express as px
+ import plotly.graph_objects as go
+ 

@@ -23,7 +23,8 @@ DB_CONFIG = {
 SIMULATOR_CONFIG: Dict[str, Any] = {
     'interval_seconds': int(os.getenv('SIM_INTERVAL', '60')),
     'batch_size': int(os.getenv('SIM_BATCH_SIZE', '10')),
-    'start_date': os.getenv('SIM_START_DATE', '2026-09-28'),
-    'end_date': os.getenv('SIM_END_DATE', '2026-09-29'),
+    'start_date': os.getenv('SIM_START_DATE'),
+    'end_date': os.getenv('SIM_END_DATE'),
+    'window_days': int(os.getenv('SIM_WINDOW_DAYS', '7')),
     'num_sensors': int(os.getenv('SIM_NUM_SENSORS', '50'))
 }

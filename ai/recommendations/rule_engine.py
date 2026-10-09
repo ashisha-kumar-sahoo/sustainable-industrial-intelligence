@@ -1,3 +1,25 @@
+import math
+import numbers
+
+
+def _numeric_value(record, key):
+    """Return a usable numeric value, treating None/NaN/non-numbers as missing."""
+    value = record.get(key) if isinstance(record, dict) else None
+    if isinstance(value, bool) or not isinstance(value, numbers.Real):
+        return None
+    try:
+        if math.isnan(value):
+            return None
+    except (TypeError, ValueError):
+        return None
+    return value
+
+
+def _ranked_by_metric(records, key):
+    """Return records that carry a usable numeric value for ``key``."""
+    return [record for record in records if _numeric_value(record, key) is not None]
+
+
 def find_highest_energy_consumer(energy_data):
     """
     Find the facility with the highest current energy consumption.
@@ -6,16 +28,20 @@ def find_highest_energy_consumer(energy_data):
     if not energy_data:
         return None
 
+    candidates = _ranked_by_metric(energy_data, "energy_consumption_kwh")
+    if not candidates:
+        return None
+
     highest = max(
-        energy_data,
+        candidates,
         key=lambda item: item["energy_consumption_kwh"]
     )
 
     return {
-        "facility_id": highest["facility_id"],
-        "facility_name": highest["facility_name"],
-        "energy_consumption_kwh": highest["energy_consumption_kwh"],
-        "reading_ts": highest["reading_ts"]
+        "facility_id": highest.get("facility_id"),
+        "facility_name": highest.get("facility_name"),
+        "energy_consumption_kwh": highest.get("energy_consumption_kwh"),
+        "reading_ts": highest.get("reading_ts")
     }
 
 
@@ -53,16 +79,20 @@ def find_highest_water_consumer(water_data):
     if not water_data:
         return None
 
+    candidates = _ranked_by_metric(water_data, "water_consumption_liters")
+    if not candidates:
+        return None
+
     highest = max(
-        water_data,
+        candidates,
         key=lambda item: item["water_consumption_liters"]
     )
 
     return {
-        "facility_id": highest["facility_id"],
-        "facility_name": highest["facility_name"],
-        "water_consumption_liters": highest["water_consumption_liters"],
-        "reading_ts": highest["reading_ts"]
+        "facility_id": highest.get("facility_id"),
+        "facility_name": highest.get("facility_name"),
+        "water_consumption_liters": highest.get("water_consumption_liters"),
+        "reading_ts": highest.get("reading_ts")
     }
 
 
@@ -75,13 +105,13 @@ def find_water_anomalies(water_data):
     anomalies = []
 
     for item in water_data:
-        if item["anomaly_flag"]:
+        if item.get("anomaly_flag"):
             anomalies.append({
-                "facility_id": item["facility_id"],
-                "facility_name": item["facility_name"],
-                "water_consumption_liters": item["water_consumption_liters"],
-                "anomaly_reason": item["anomaly_reason"],
-                "reading_ts": item["reading_ts"]
+                "facility_id": item.get("facility_id"),
+                "facility_name": item.get("facility_name"),
+                "water_consumption_liters": item.get("water_consumption_liters"),
+                "anomaly_reason": item.get("anomaly_reason"),
+                "reading_ts": item.get("reading_ts")
             })
 
     return anomalies
@@ -95,17 +125,21 @@ def find_highest_waste_producer(waste_data):
     if not waste_data:
         return None
 
+    candidates = _ranked_by_metric(waste_data, "waste_quantity_kg")
+    if not candidates:
+        return None
+
     highest = max(
-        waste_data,
+        candidates,
         key=lambda item: item["waste_quantity_kg"]
     )
 
     return {
-        "facility_id": highest["facility_id"],
-        "facility_name": highest["facility_name"],
-        "waste_quantity_kg": highest["waste_quantity_kg"],
-        "waste_type": highest["waste_type"],
-        "reading_ts": highest["reading_ts"]
+        "facility_id": highest.get("facility_id"),
+        "facility_name": highest.get("facility_name"),
+        "waste_quantity_kg": highest.get("waste_quantity_kg"),
+        "waste_type": highest.get("waste_type"),
+        "reading_ts": highest.get("reading_ts")
     }
 
 
@@ -118,14 +152,14 @@ def find_waste_anomalies(waste_data):
     anomalies = []
 
     for item in waste_data:
-        if item["anomaly_flag"]:
+        if item.get("anomaly_flag"):
             anomalies.append({
-                "facility_id": item["facility_id"],
-                "facility_name": item["facility_name"],
-                "waste_quantity_kg": item["waste_quantity_kg"],
-                "waste_type": item["waste_type"],
-                "anomaly_reason": item["anomaly_reason"],
-                "reading_ts": item["reading_ts"]
+                "facility_id": item.get("facility_id"),
+                "facility_name": item.get("facility_name"),
+                "waste_quantity_kg": item.get("waste_quantity_kg"),
+                "waste_type": item.get("waste_type"),
+                "anomaly_reason": item.get("anomaly_reason"),
+                "reading_ts": item.get("reading_ts")
             })
 
     return anomalies
@@ -143,15 +177,15 @@ def find_air_quality_issues(air_quality_data):
     issues = []
 
     for item in air_quality_data:
-        category = item["aqi_category"]
+        category = item.get("aqi_category")
 
         if category and category.lower() != "good":
             issues.append({
-                "facility_id": item["facility_id"],
-                "facility_name": item["facility_name"],
-                "aqi": item["aqi"],
+                "facility_id": item.get("facility_id"),
+                "facility_name": item.get("facility_name"),
+                "aqi": item.get("aqi"),
                 "aqi_category": category,
-                "reading_ts": item["reading_ts"]
+                "reading_ts": item.get("reading_ts")
             })
 
     return issues
@@ -166,17 +200,17 @@ def find_traffic_issues(traffic_data):
     issues = []
 
     for item in traffic_data:
-        congestion = item["congestion_level"]
+        congestion = item.get("congestion_level")
 
         if congestion and congestion.upper() != "LOW":
             issues.append({
-                "facility_id": item["facility_id"],
-                "facility_name": item["facility_name"],
-                "vehicle_count": item["vehicle_count"],
-                "average_speed_kmph": item["average_speed_kmph"],
+                "facility_id": item.get("facility_id"),
+                "facility_name": item.get("facility_name"),
+                "vehicle_count": item.get("vehicle_count"),
+                "average_speed_kmph": item.get("average_speed_kmph"),
                 "congestion_level": congestion,
-                "lane_occupancy_percent": item["lane_occupancy_percent"],
-                "reading_ts": item["reading_ts"]
+                "lane_occupancy_percent": item.get("lane_occupancy_percent"),
+                "reading_ts": item.get("reading_ts")
             })
 
     return issues
@@ -190,7 +224,7 @@ def find_high_priority_alerts(alerts):
     high_priority = []
 
     for alert in alerts:
-        severity = alert["severity"]
+        severity = alert.get("severity")
 
         if severity and severity.upper() in ["HIGH", "CRITICAL"]:
             high_priority.append(alert)

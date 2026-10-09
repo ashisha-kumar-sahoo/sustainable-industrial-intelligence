@@ -1,0 +1,44 @@
+--- backups/ai/recommendations/rule_engine.py+++ ai/recommendations/rule_engine.py@@ -38,10 +38,10 @@     )
+ 
+     return {
+-        "facility_id": highest["facility_id"],
+-        "facility_name": highest["facility_name"],
+-        "energy_consumption_kwh": highest["energy_consumption_kwh"],
+-        "reading_ts": highest["reading_ts"]
++        "facility_id": highest.get("facility_id"),
++        "facility_name": highest.get("facility_name"),
++        "energy_consumption_kwh": highest.get("energy_consumption_kwh"),
++        "reading_ts": highest.get("reading_ts")
+     }
+ 
+ 
+@@ -89,10 +89,10 @@     )
+ 
+     return {
+-        "facility_id": highest["facility_id"],
+-        "facility_name": highest["facility_name"],
+-        "water_consumption_liters": highest["water_consumption_liters"],
+-        "reading_ts": highest["reading_ts"]
++        "facility_id": highest.get("facility_id"),
++        "facility_name": highest.get("facility_name"),
++        "water_consumption_liters": highest.get("water_consumption_liters"),
++        "reading_ts": highest.get("reading_ts")
+     }
+ 
+ 
+@@ -135,11 +135,11 @@     )
+ 
+     return {
+-        "facility_id": highest["facility_id"],
+-        "facility_name": highest["facility_name"],
+-        "waste_quantity_kg": highest["waste_quantity_kg"],
+-        "waste_type": highest["waste_type"],
+-        "reading_ts": highest["reading_ts"]
++        "facility_id": highest.get("facility_id"),
++        "facility_name": highest.get("facility_name"),
++        "waste_quantity_kg": highest.get("waste_quantity_kg"),
++        "waste_type": highest.get("waste_type"),
++        "reading_ts": highest.get("reading_ts")
+     }
+ 
+ 

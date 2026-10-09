@@ -58,7 +58,7 @@ Create an admin account on the **Create Admin Account** tab, then log in. Accoun
 |---|---|---|
 | `DATABASE_URL` | SQLAlchemy URL, e.g. `postgresql+psycopg2://user:pass@host:5432/db`. Enables Member 2 PostgreSQL data mode. | unset → synthetic sample data |
 | `ESTATE_LAT`, `ESTATE_LON` | Map centre | `20.29`, `85.84` |
-| `ASSISTANT_URL` | AI assistant service: POST `{question}` → `{answer, evidence}` | unset → labelled sample answer |
+| `ASSISTANT_URL` | AI assistant service endpoint | defaults to `http://127.0.0.1:8000/api/ask` |
 | `SIMULATION_URL` | Simulation service: POST `{dataset, action, reduction_pct}` → `{current, simulated, change_pct}` | unset → labelled estimate |
 
 No secrets are stored in the source code. Copy `dashboard/.env.example` to your local environment configuration; do not commit real credentials.
@@ -84,7 +84,7 @@ This dashboard is the presentation/integration layer. Member 5 does not retrain 
 
 - **Member 2:** supplies PostgreSQL raw tables for energy, water, waste, environment/AQI, equipment, traffic and safety.
 - **Members 3/4:** supply the standardized `ai_results` and `forecasts` outputs described in `docs/dashboard/dashboard-data-contract.md`.
-- **Member 6:** supplies `ASSISTANT_URL` and `SIMULATION_URL` when those services are ready.
+- **Member 6:** the dashboard defaults to the local assistant endpoint `http://127.0.0.1:8000/api/ask`; override `ASSISTANT_URL` only when deploying the service elsewhere.
 - **Member 5:** consumes these outputs and renders KPIs, charts, maps, alerts, recommendations and raw data.
 
 When `DATABASE_URL` is set, the dashboard reads PostgreSQL instead of the synthetic provider. Optional `*_TABLE` environment variables allow the team to keep different PostgreSQL table names without changing dashboard code.

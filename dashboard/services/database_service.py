@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from config import DB, DS, FAC, CONTRACT
+from config import DB, DS, FAC, CONTRACT, active_domains
 from db import query
 
 
@@ -91,7 +91,7 @@ def _db_raw(ds, fac=None, zone=None, start=None, end=None, limit=5000):
             WHERE 1=1
         """,
         "waste": """
-            SELECT r.reading_ts AS timestamp, r.facility_id,
+            SELECT r.reading_ts AS timestamp, r.sensor_id, r.facility_id,
                    f.facility_name, f.location AS facility_location,
                    r.fill_level_percent AS fill_pct,
                    r.fill_rate_percent_per_hour, r.waste_quantity_kg,
@@ -115,43 +115,53 @@ def _db_raw(ds, fac=None, zone=None, start=None, end=None, limit=5000):
                    f.facility_name, f.location AS facility_location,
                    r.vehicle_count AS vehicles, r.heavy_vehicle_count AS trucks,
                    r.average_speed_kmph AS avg_speed_kmh,
+                   r.lane_occupancy_percent AS parking_occupancy_pct,
                    r.congestion_level
             FROM public.traffic_readings r
             JOIN public.facilities f USING (facility_id)
             WHERE 1=1
         """,
         "equipment": """
-            SELECT COALESCE(s.last_reading_at, s.created_at) AS timestamp,
-                   s.facility_id, f.facility_name, f.location AS facility_location,
-                   CASE s.status
-                       WHEN 'ACTIVE' THEN 100
-                       WHEN 'MAINTENANCE' THEN 60
-                       WHEN 'FAULTY' THEN 25
-                       WHEN 'INACTIVE' THEN 40
-                       ELSE 10
-                   END AS health_score,
-                   s.sensor_name AS machine_id,
-                   s.status AS equipment_status
-            FROM public.sensors s
+            SELECT r.reading_ts AS timestamp, r.sensor_id, r.facility_id,
+                   f.facility_name, f.location AS facility_location,
+                   r.equipment_id AS machine_id,
+                   r.temperature_c AS temperature,
+                   r.vibration_mms AS vibration_mm_s,
+                   r.operating_hours,
+                   r.utilization_percent AS utilization_pct,
+                   r.equipment_status,
+                   CASE r.equipment_status
+                       WHEN 'NORMAL' THEN 100
+                       WHEN 'WARNING' THEN 60
+                       WHEN 'CRITICAL' THEN 25
+                       WHEN 'OFFLINE' THEN 0
+                       ELSE 50
+                   END AS health_score
+            FROM public.equipment_readings r
             JOIN public.facilities f USING (facility_id)
             WHERE 1=1
-              AND s.sensor_type IN ('ENERGY','WATER','WASTE','TEMPERATURE','HUMIDITY','TRAFFIC','AQI')
         """,
         "safety": """
-            SELECT a.reading_ts AS timestamp, a.facility_id,
+            SELECT r.reading_ts AS timestamp, r.sensor_id, r.facility_id,
                    f.facility_name, f.location AS facility_location,
-                   1 AS incidents,
-                   CASE a.severity
-                       WHEN 'CRITICAL' THEN 4
-                       WHEN 'HIGH' THEN 3
-                       WHEN 'MEDIUM' THEN 2
-                       ELSE 1
+                   CASE WHEN r.incident_type IS NOT NULL
+                              AND r.incident_type <> 'ROUTINE_MONITORING'
+                        THEN 1 ELSE 0 END AS incidents,
+                   CASE r.severity
+                       WHEN 'Critical' THEN 4
+                       WHEN 'High' THEN 3
+                       WHEN 'Medium' THEN 2
+                       WHEN 'Low' THEN 1
+                       ELSE 0
                    END AS severity_level,
-                   a.alert_type
-            FROM public.alerts a
+                   r.incident_type, r.severity, r.people_affected,
+                   r.response_time, r.gas_leak_ppm, r.smoke_detected,
+                   r.fire_alarm, r.emergency_button,
+                   r.temperature_c AS safety_temperature_c,
+                   r.synthetic_context
+            FROM public.safety_readings r
             JOIN public.facilities f USING (facility_id)
-            WHERE a.status = 'ACTIVE'
-              AND (UPPER(a.alert_type) LIKE '%SAFETY%' OR UPPER(a.alert_type) LIKE '%INCIDENT%')
+            WHERE 1=1
         """,
     }
     if ds not in queries:
@@ -160,18 +170,18 @@ def _db_raw(ds, fac=None, zone=None, start=None, end=None, limit=5000):
     sql = queries[ds]
     params = {}
     if fac is not None:
-        alias = "r" if ds in {"energy","water","waste","environment","traffic"} else "s" if ds == "equipment" else "a"
+        alias = "r"
         sql += f" AND {alias}.facility_id = :facility_id"
         params["facility_id"] = fac
     if start is not None:
-        time_col = "r.reading_ts" if ds in {"energy","water","waste","environment","traffic","safety"} else "COALESCE(s.last_reading_at, s.created_at)"
+        time_col = "r.reading_ts"
         sql += f" AND {time_col} >= :start_ts"
         params["start_ts"] = pd.Timestamp(start).to_pydatetime()
     if end is not None:
-        time_col = "r.reading_ts" if ds in {"energy","water","waste","environment","traffic","safety"} else "COALESCE(s.last_reading_at, s.created_at)"
+        time_col = "r.reading_ts"
         sql += f" AND {time_col} < :end_ts"
         params["end_ts"] = (pd.Timestamp(end) + pd.Timedelta(days=1)).to_pydatetime()
-    order_col = "r.reading_ts" if ds in {"energy","water","waste","environment","traffic","safety"} else "COALESCE(s.last_reading_at, s.created_at)"
+    order_col = "r.reading_ts"
     sql += f" ORDER BY {order_col} DESC LIMIT :limit"
     params["limit"] = int(limit)
 
@@ -187,6 +197,8 @@ def _db_raw(ds, fac=None, zone=None, start=None, end=None, limit=5000):
 
 @st.cache_data(ttl=60)
 def raw(ds, fac=None, zone=None, start=None, end=None, limit=5000):
+    if ds not in active_domains():
+        return pd.DataFrame()
     if DB and ds in {"energy", "water", "waste", "environment", "traffic", "equipment", "safety"}:
         return _db_raw(ds, fac, zone, start, end, limit)
 
@@ -220,11 +232,20 @@ def _normalize_result_data(ds, d):
     d = d.dropna(subset=["timestamp", "actual_value"])
     hist = d.copy()
     hist["h"] = hist["timestamp"].dt.hour
-    prof = hist.groupby(["facility_id", "zone_id", "h"])["actual_value"].median().rename("expected_value").reset_index()
+    prof = (
+        hist.groupby(["facility_id", "zone_id", "h"])["actual_value"]
+        .median()
+        .rename("expected_value")
+        .reset_index()
+    )
     d["h"] = d["timestamp"].dt.hour
     d = d.merge(prof, on=["facility_id", "zone_id", "h"], how="left")
     d["expected_value"] = d["expected_value"].fillna(d["actual_value"].median())
-    d["deviation_pct"] = ((d["actual_value"] / d["expected_value"].replace(0, np.nan) - 1) * 100).replace([np.inf, -np.inf], 0).fillna(0)
+    expected_values = d["expected_value"].replace(0, np.nan)
+    deviation_pct = (d["actual_value"] / expected_values - 1) * 100
+    d["deviation_pct"] = deviation_pct.replace(
+        [np.inf, -np.inf], 0
+    ).fillna(0)
     d["severity"] = np.select(
         [d["deviation_pct"].abs() >= 30, d["deviation_pct"].abs() >= 15],
         ["HIGH", "MEDIUM"], default="NORMAL"
@@ -261,7 +282,17 @@ def forecast(ds):
 @st.cache_data(ttl=60)
 def alerts():
     if not DB:
-        return pd.DataFrame(columns=["alert_id","facility_id","facility_name","alert_type","severity","message","reading_ts"])
+        return pd.DataFrame(
+            columns=[
+                "alert_id",
+                "facility_id",
+                "facility_name",
+                "alert_type",
+                "severity",
+                "message",
+                "reading_ts",
+            ]
+        )
     return query("""
         SELECT a.alert_id, a.facility_id, f.facility_name,
                a.alert_type, a.severity, a.message, a.reading_ts
@@ -274,5 +305,11 @@ def alerts():
 
 def get_facilities():
     if DB:
-        return query("SELECT facility_id, facility_name, facility_type, company_name, location, status, sustainability_rating FROM public.facilities ORDER BY facility_id")
-    return FAC.rename(columns={"name":"facility_name"})[["facility_id","facility_name","zone"]]
+        return query(
+            "SELECT facility_id, facility_name, facility_type, company_name, "
+            "location, status, sustainability_rating "
+            "FROM public.facilities ORDER BY facility_id"
+        )
+    return FAC.rename(columns={"name": "facility_name"})[
+        ["facility_id", "facility_name", "zone"]
+    ]

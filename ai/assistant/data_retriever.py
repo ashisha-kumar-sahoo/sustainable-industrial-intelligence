@@ -32,21 +32,96 @@ def get_resource_history(metric, days=7):
 
 
 def get_equipment_health():
-    """Use existing sensor health and alerts; no synthetic equipment table."""
+    """Return the latest equipment readings that warrant attention."""
     conn = get_connection()
     try:
         with conn.cursor() as cursor:
             cursor.execute("""
-                SELECT s.sensor_id, s.sensor_name, s.sensor_type, s.status,
-                       s.calibration_due_date, f.facility_id, f.facility_name
-                FROM sensors s JOIN facilities f USING (facility_id)
-                WHERE UPPER(COALESCE(s.status, '')) <> 'ACTIVE'
-                   OR s.calibration_due_date <= CURRENT_DATE
-                ORDER BY s.calibration_due_date NULLS LAST, f.facility_name
+                SELECT DISTINCT ON (r.sensor_id)
+                       r.sensor_id, r.equipment_id, r.equipment_status,
+                       r.temperature_c, r.vibration_mms, r.operating_hours,
+                       r.utilization_percent, r.reading_ts,
+                       f.facility_id, f.facility_name
+                FROM public.equipment_readings AS r
+                JOIN public.facilities AS f USING (facility_id)
+                ORDER BY r.sensor_id, r.reading_ts DESC
             """)
-            return [{"sensor_id": r[0], "equipment_name": r[1], "equipment_type": r[2],
-                     "status": r[3], "calibration_due_date": r[4], "facility_id": r[5],
-                     "facility_name": r[6]} for r in cursor.fetchall()]
+            rows = cursor.fetchall()
+
+        equipment_rows = []
+        for row in rows:
+            (
+                sensor_id, equipment_id, status, temperature, vibration,
+                operating_hours, utilization, timestamp, facility_id,
+                facility_name,
+            ) = row
+            temperature_value = float(temperature) if temperature is not None else None
+            vibration_value = float(vibration) if vibration is not None else None
+            utilization_value = float(utilization) if utilization is not None else None
+            needs_attention = (
+                status in {"WARNING", "CRITICAL", "OFFLINE"}
+                or (temperature_value is not None and temperature_value >= 80)
+                or (vibration_value is not None and vibration_value >= 5)
+                or (utilization_value is not None and utilization_value >= 80)
+            )
+            if needs_attention:
+                equipment_rows.append({
+                    "sensor_id": sensor_id,
+                    "equipment_id": equipment_id,
+                    "status": status,
+                    "temperature_c": temperature_value,
+                    "vibration_mms": vibration_value,
+                    "operating_hours": (
+                        float(operating_hours)
+                        if operating_hours is not None
+                        else None
+                    ),
+                    "utilization_percent": utilization_value,
+                    "reading_ts": timestamp,
+                    "facility_id": facility_id,
+                    "facility_name": facility_name,
+                })
+        return equipment_rows
+    finally:
+        conn.close()
+
+
+def get_latest_safety_data():
+    """Return recent safety telemetry and clearly marked synthetic context."""
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT DISTINCT ON (r.sensor_id)
+                       r.sensor_id, r.reading_ts, r.gas_leak_ppm,
+                       r.smoke_detected, r.fire_alarm, r.emergency_button,
+                       r.incident_type, r.severity, r.people_affected,
+                       r.response_time, f.facility_id, f.facility_name,
+                       r.synthetic_context
+                FROM public.safety_readings AS r
+                JOIN public.facilities AS f USING (facility_id)
+                ORDER BY r.sensor_id, r.reading_ts DESC
+            """)
+            rows = cursor.fetchall()
+
+        return [
+            {
+                "sensor_id": row[0],
+                "reading_ts": row[1],
+                "gas_leak_ppm": float(row[2]) if row[2] is not None else None,
+                "smoke_detected": row[3],
+                "fire_alarm": row[4],
+                "emergency_button": row[5],
+                "incident_type": row[6],
+                "severity": row[7],
+                "people_affected": row[8],
+                "response_time": float(row[9]) if row[9] is not None else None,
+                "facility_id": row[10],
+                "facility_name": row[11],
+                "synthetic_incident_context": bool(row[12]),
+            }
+            for row in rows
+        ]
     finally:
         conn.close()
 
@@ -115,8 +190,8 @@ def get_latest_energy_data():
                 "facility_id": row[0],
                 "facility_name": row[1],
                 "reading_ts": row[2],
-                "energy_consumption_kwh": float(row[3]),
-                "peak_demand_kw": float(row[4]),
+                "energy_consumption_kwh": float(row[3]) if row[3] is not None else None,
+                "peak_demand_kw": float(row[4]) if row[4] is not None else None,
                 "anomaly_flag": row[5],
                 "anomaly_reason": row[6]
             })
@@ -182,7 +257,8 @@ def get_latest_water_data():
                 w.water_consumption_liters,
                 w.flow_rate,
                 w.anomaly_flag,
-                w.anomaly_reason
+                w.anomaly_reason,
+                w.sensor_id
             FROM water_readings w
             JOIN facilities f
                 ON w.facility_id = f.facility_id
@@ -203,8 +279,8 @@ def get_latest_water_data():
                 "facility_id": row[0],
                 "facility_name": row[1],
                 "reading_ts": row[2],
-                "water_consumption_liters": float(row[3]),
-                "flow_rate": float(row[4]),
+                "water_consumption_liters": float(row[3]) if row[3] is not None else None,
+                "flow_rate": float(row[4]) if row[4] is not None else None,
                 "anomaly_flag": row[5],
                 "anomaly_reason": row[6]
             })
@@ -337,7 +413,8 @@ def get_latest_waste_data():
                 w.fill_rate_percent_per_hour,
                 w.disposal_method,
                 w.anomaly_flag,
-                w.anomaly_reason
+                w.anomaly_reason,
+                w.sensor_id
             FROM waste_readings w
             JOIN facilities f
                 ON w.facility_id = f.facility_id
@@ -359,14 +436,15 @@ def get_latest_waste_data():
                 "facility_name": row[1],
                 "reading_ts": row[2],
                 "waste_type": row[3],
-                "waste_quantity_kg": float(row[4]),
-                "recyclable_quantity_kg": float(row[5]),
-                "hazardous_quantity_kg": float(row[6]),
+                "waste_quantity_kg": float(row[4]) if row[4] is not None else None,
+                "recyclable_quantity_kg": float(row[5]) if row[5] is not None else None,
+                "hazardous_quantity_kg": float(row[6]) if row[6] is not None else None,
                 "fill_level_percent": float(row[7]) if row[7] is not None else None,
                 "fill_rate_percent_per_hour": float(row[8]) if row[8] is not None else None,
                 "disposal_method": row[9],
                 "anomaly_flag": row[10],
-                "anomaly_reason": row[11]
+                "anomaly_reason": row[11],
+                "sensor_id": row[12],
             })
 
         return waste_data
@@ -467,7 +545,7 @@ def get_latest_traffic_data():
                     float(row[5]) if row[5] is not None else None
                 ),
                 "congestion_level": row[6],
-                "lane_occupancy_percent": float(row[7])
+                "lane_occupancy_percent": float(row[7]) if row[7] is not None else None
             })
 
         return traffic_data

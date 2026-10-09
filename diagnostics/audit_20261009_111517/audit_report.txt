@@ -1,0 +1,121 @@
+﻿[2026-10-09 11:15:17] Project root: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4
+[2026-10-09 11:15:17] Audit report directory: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\diagnostics\audit_20261009_111517
+[2026-10-09 11:15:17] Safety: no .env files will be read or modified; no database commands; no Git commands/pushes.
+[2026-10-09 11:15:17] The script only edits source when an exact expected chart-function pattern is found.
+[2026-10-09 11:15:17] Python source files found: 181
+[2026-10-09 11:15:17] 
+[2026-10-09 11:15:17] ========== PLOTLY CALL SITES ==========
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\dashboard\components\charts.py:3: import plotly.express as px
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\dashboard\components\charts.py:101: def supporting_chart(data, columns: list[str], dark: bool):
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\dashboard\components\charts.py:103: figure = px.line(data, x="timestamp", y=columns)
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\dashboard\components\domain_panel.py:197: supporting_chart(
+[2026-10-09 11:15:17] 
+[2026-10-09 11:15:17] ========== AI ASSISTANT FLOAT CONVERSIONS ==========
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:28: "reading_ts": row[2], "value": float(row[3]) if row[3] is not None else None,
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:58: temperature_value = float(temperature) if temperature is not None else None
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:59: vibration_value = float(vibration) if vibration is not None else None
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:60: utilization_value = float(utilization) if utilization is not None else None
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:75: float(operating_hours)
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:111: "gas_leak_ppm": float(row[2]) if row[2] is not None else None,
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:118: "response_time": float(row[9]) if row[9] is not None else None,
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:193: "energy_consumption_kwh": float(row[3]),
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:194: "peak_demand_kw": float(row[4]),
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:282: "water_consumption_liters": float(row[3]),
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:283: "flow_rate": float(row[4]),
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:337: float(row[3])
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:342: float(row[4])
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:439: "waste_quantity_kg": float(row[4]),
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:440: "recyclable_quantity_kg": float(row[5]),
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:441: "hazardous_quantity_kg": float(row[6]),
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:442: "fill_level_percent": float(row[7]) if row[7] is not None else None,
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:443: "fill_rate_percent_per_hour": float(row[8]) if row[8] is not None else None,
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:494: "pm25": float(row[4]) if row[4] is not None else None,
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:495: "pm10": float(row[5]) if row[5] is not None else None,
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:545: float(row[5]) if row[5] is not None else None
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:548: "lane_occupancy_percent": float(row[7])
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:603: "value": float(row[7]) if row[7] is not None else None,
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:604: "threshold": float(row[8]) if row[8] is not None else None,
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:137: reduction_pct = float(reduction_match.group(1))
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:830: timeout=float(os.getenv("OLLAMA_TIMEOUT", "120")),
+[2026-10-09 11:15:17] 
+[2026-10-09 11:15:17] ========== AI ASSISTANT DICTIONARY-STYLE LOOKUPS ==========
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\context_builder.py:25: values = context["data"]
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:50: response["explanation"] = explanation or summary
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:60: summary[key] = data[key]
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:276: answer["explanation"] = (
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:807: key: decision[key]
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:858: result["context"],
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:863: result["context"] = _context_summary(context)
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:870: result["errors"].append(
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:886: answer = _answer(decision["message"], basis="Unavailable")
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:898: result["natural_language_response"] = _ollama_explain(
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:903: if result["natural_language_response"] is None:
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:904: result["errors"].append(
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:935: for key, value in output["decision"].items()
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:940: "route": output["route"],
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:942: "answer": output["answer"],
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:943: "natural_language_response": output["natural_language_response"],
+[2026-10-09 11:15:17] C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:944: "errors": output["errors"],
+[2026-10-09 11:15:17] Backed up before editing: dashboard\components\charts.py
+[2026-10-09 11:15:17] Applied guarded numeric normalization to supporting_chart() in dashboard/components/charts.py.
+[2026-10-09 11:15:17] 
+[2026-10-09 11:15:17] ========== ASSISTANT FIX SAFETY ==========
+[2026-10-09 11:15:17] No automatic Assistant source edits were made: the exact failing expressions are not established.
+[2026-10-09 11:15:17] Blindly replacing float(None) with zero or suppressing KeyError could silently change AI decisions.
+[2026-10-09 11:15:17] 
+[2026-10-09 11:15:17] ========== PYTHON COMPILE CHECK ==========
+[2026-10-09 11:15:29] Compile check completed without reported syntax errors.
+[2026-10-09 11:15:29] 
+[2026-10-09 11:15:29] ========== TEST SUITE ==========
+[2026-10-09 11:15:40] ...................................................................      [100%]
+[2026-10-09 11:15:40] 67 passed in 9.14s
+[2026-10-09 11:15:41] pytest passed.
+[2026-10-09 11:15:41] 
+[2026-10-09 11:15:41] ========== CHANGE SUMMARY ==========
+[2026-10-09 11:15:41] Changed: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\dashboard\components\charts.py
+[2026-10-09 11:15:41] Backups are under: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\diagnostics\audit_20261009_111517\backups
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:28
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:58
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:59
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:60
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:75
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:111
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:118
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:193
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:194
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:282
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:283
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:337
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:342
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:439
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:440
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:441
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:442
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:443
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:494
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:495
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:545
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:548
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:603
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\data_retriever.py:604
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:137
+[2026-10-09 11:15:41] REVIEW: Review nullable numeric conversion: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:830
+[2026-10-09 11:15:41] REVIEW: Review potentially missing dictionary key: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\context_builder.py:25
+[2026-10-09 11:15:41] REVIEW: Review potentially missing dictionary key: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:50
+[2026-10-09 11:15:41] REVIEW: Review potentially missing dictionary key: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:60
+[2026-10-09 11:15:41] REVIEW: Review potentially missing dictionary key: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:276
+[2026-10-09 11:15:41] REVIEW: Review potentially missing dictionary key: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:807
+[2026-10-09 11:15:41] REVIEW: Review potentially missing dictionary key: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:858
+[2026-10-09 11:15:41] REVIEW: Review potentially missing dictionary key: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:863
+[2026-10-09 11:15:41] REVIEW: Review potentially missing dictionary key: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:870
+[2026-10-09 11:15:41] REVIEW: Review potentially missing dictionary key: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:886
+[2026-10-09 11:15:41] REVIEW: Review potentially missing dictionary key: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:898
+[2026-10-09 11:15:41] REVIEW: Review potentially missing dictionary key: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:903
+[2026-10-09 11:15:41] REVIEW: Review potentially missing dictionary key: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:904
+[2026-10-09 11:15:41] REVIEW: Review potentially missing dictionary key: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:935
+[2026-10-09 11:15:41] REVIEW: Review potentially missing dictionary key: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:940
+[2026-10-09 11:15:41] REVIEW: Review potentially missing dictionary key: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:942
+[2026-10-09 11:15:41] REVIEW: Review potentially missing dictionary key: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:943
+[2026-10-09 11:15:41] REVIEW: Review potentially missing dictionary key: C:\Users\sahoo\OneDrive\Desktop\sustainable-industrial-intelligence-final-v4\ai\assistant\service.py:944
+[2026-10-09 11:15:41] No PostgreSQL data, .env files, or GitHub state were modified.
+

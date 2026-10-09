@@ -49,7 +49,14 @@ class AssistantHandler(BaseHTTPRequestHandler):
         except (ValueError, UnicodeDecodeError, json.JSONDecodeError) as exc:
             self._send(400, json.dumps({"error": str(exc)}), "application/json; charset=utf-8")
         except Exception as exc:
-            self._send(500, json.dumps({"error": f"Assistant request failed: {type(exc).__name__}"}), "application/json; charset=utf-8")
+            error_body = json.dumps(
+                {"error": f"Assistant request failed: {type(exc).__name__}"}
+            )
+            self._send(
+                500,
+                error_body,
+                "application/json; charset=utf-8",
+            )
 
     def log_message(self, format, *args):
         print(f"[assistant-ui] {self.address_string()} - {format % args}")

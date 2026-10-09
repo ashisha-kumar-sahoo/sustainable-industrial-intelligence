@@ -1,41 +1,95 @@
 """Deterministic intent routing for the industrial intelligence assistant."""
 
-def route_question(question):
+
+def route_question(question: str) -> str:
+    """Map a user's question to the domain-specific decision handler."""
     if not isinstance(question, str) or not question.strip():
         return "invalid"
-    q = question.casefold()
-    if any(x in q for x in ("what if", "simulate", "simulation")):
+
+    normalized_question = question.casefold()
+
+    if any(term in normalized_question for term in ("what if", "simulate", "simulation")):
         return "scenario"
-    if any(x in q for x in ("last ", "past ", "history", "historical", "trend", "changed", "over the", "this week", "this month")):
+
+    historical_terms = (
+        "last ",
+        "past ",
+        "history",
+        "historical",
+        "trend",
+        "changed",
+        "over the",
+        "this week",
+        "this month",
+    )
+    if any(term in normalized_question for term in historical_terms):
         return "historical"
-    if any(x in q for x in ("why", "cause", "reason", "what could be causing")):
+
+    if any(
+        term in normalized_question
+        for term in ("why", "cause", "reason", "what could be causing")
+    ):
         return "diagnostic"
-    if "anomal" in q and "energy" in q:
+
+    if "anomal" in normalized_question and "energy" in normalized_question:
         return "energy_anomaly"
-    if any(x in q for x in ("equipment", "maintenance")):
+
+    if any(term in normalized_question for term in ("equipment", "maintenance")):
         return "equipment"
-    if any(x in q for x in ("safety", "incident")):
+
+    if any(term in normalized_question for term in ("safety", "incident")):
         return "safety"
-    if "traffic" in q or "congestion" in q or "parking" in q:
+
+    if any(
+        term in normalized_question
+        for term in ("traffic", "congestion", "parking")
+    ):
         return "traffic"
-    if any(x in q for x in ("aqi", "air quality", "pollution", "air-quality")):
+
+    if any(
+        term in normalized_question
+        for term in ("aqi", "air quality", "pollution", "air-quality")
+    ):
         return "air_quality"
-    if "waste" in q or "bin" in q:
+
+    if "waste" in normalized_question or "bin" in normalized_question:
         return "waste"
-    if "water" in q:
+    if "water" in normalized_question:
         return "water"
-    if any(x in q for x in ("energy", "power", "electricity")):
-        if any(x in q for x in ("highest", "lowest", "most", "least", "compare", "which facility")):
-            return "energy"
+
+    if any(
+        term in normalized_question
+        for term in ("energy", "power", "electricity")
+    ):
         return "energy"
-    if any(x in q for x in ("what should", "recommend", "inspect", "prioritize", "action")):
+
+    if any(
+        term in normalized_question
+        for term in ("what should", "recommend", "inspect", "prioritize", "action")
+    ):
         return "action"
-    if any(x in q for x in ("today", "current", "currently", "now", "status", "biggest problems", "concerns")):
+
+    if any(
+        term in normalized_question
+        for term in (
+            "today",
+            "current",
+            "currently",
+            "now",
+            "status",
+            "biggest problems",
+            "concerns",
+        )
+    ):
         return "current_status"
-    if any(x in q for x in ("highest", "lowest", "most", "least", "compare", "comparison")):
+
+    if any(
+        term in normalized_question
+        for term in ("highest", "lowest", "most", "least", "compare", "comparison")
+    ):
         return "comparison"
-    if any(x in q for x in ("what should", "recommend", "inspect", "prioritize", "action")):
-        return "action"
-    if "industrial intelligence system" in q:
+
+    if "industrial intelligence system" in normalized_question:
         return "general"
+
     return "unknown"

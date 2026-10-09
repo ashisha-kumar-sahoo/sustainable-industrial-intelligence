@@ -1,10 +1,19 @@
-"""Resources page (Energy / Water / Waste tabs). Moved from pages.resources."""
+"""Resource monitoring page with Energy, Water, and Waste tabs."""
+
 import streamlit as st
+
 from components.domain_panel import domain
 from components.header import page_header
 
 
-def resources(dark):
-    page_header("💧 Resources"); t = st.tabs(["⚡ Energy", "💧 Water", "🗑 Waste"])
-    for tab, ds in zip(t, ["energy", "water", "waste"]):
-        with tab: domain(ds, dark)
+RESOURCE_DOMAINS = ["energy", "water", "waste"]
+RESOURCE_TAB_LABELS = ["⚡ Energy", "💧 Water", "🗑 Waste"]
+
+
+def resources(dark: bool) -> None:
+    page_header("💧 Resources")
+    tabs = st.tabs(RESOURCE_TAB_LABELS)
+
+    for tab, dataset in zip(tabs, RESOURCE_DOMAINS):
+        with tab:
+            domain(dataset, dark)

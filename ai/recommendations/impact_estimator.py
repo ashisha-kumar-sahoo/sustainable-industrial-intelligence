@@ -7,9 +7,9 @@ def calculate_excess(problem):
     in the alert message.
     """
 
-    message = problem.get("message", "")
+    message = problem.get("message")
 
-    if "over)" not in message:
+    if not isinstance(message, str) or "over)" not in message:
         return None
 
     try:
@@ -31,7 +31,10 @@ def calculate_excess_quantity(problem):
     present in the alert message.
     """
 
-    message = problem.get("message", "")
+    message = problem.get("message")
+
+    if not isinstance(message, str):
+        return None
 
     try:
         import re
